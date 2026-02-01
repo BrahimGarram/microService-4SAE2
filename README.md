@@ -79,5 +79,4 @@ Chaque microservice Spring Boot est indépendant et dispose de sa propre base de
 
 ---
 
-## 📂 Structure du projet (exemple)
 
