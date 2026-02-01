@@ -2,153 +2,82 @@
 
 ## 📌 Description
 
-**MicroService-4SAE2** is an academic project based on a **microservices architecture** for a **freelance and project matching web platform**.
+**MicroService-4SAE2** est un projet académique basé sur une **architecture microservices** moderne, conçue pour être **scalable**, **sécurisée** et **faiblement couplée**.
 
-The objective of this project is to design and implement a modern, scalable, and modular system where each service handles a specific business responsibility.
+L’objectif principal est de mettre en place un système distribué où chaque microservice gère une responsabilité métier bien définie, tout en communiquant via des mécanismes standards et centralisés.
 
-The backend is developed using **Spring Boot** and **Symfony (PHP)**, while the frontend is built with **Angular**. The project uses multiple database technologies (**H2, MySQL, MongoDB**) following the principle of **polyglot persistence**.
-
----
-
-## 🏗️ Architecture
-
-The project follows a **microservices architecture**, where:
-
-* Each microservice is independent
-* Services communicate via REST APIs
-* Each service can have its own database
-
-### Main components:
-
-* **Frontend**: Angular Web Application
-* **Backend Services**:
-
-  * Spring Boot Microservices
-  * Symfony (PHP) Microservices
-* **Databases**:
-
-  * H2 (development & testing)
-  * MySQL (relational data)
-  * MongoDB (NoSQL data)
+Le backend est développé avec **Spring Boot** et **Symfony (PHP)**, le frontend avec **Angular**, et la sécurité est assurée par **Keycloak**.
 
 ---
 
-## 🛠️ Technologies Used
+## 🏗️ Architecture globale
+
+Le projet repose sur une **architecture microservices complète**, incluant les composants suivants :
+
+### 🔹 Composants principaux
+
+- **Frontend** : Application web Angular  
+- **API Gateway** : Point d’entrée unique pour toutes les requêtes du frontend  
+- **Eureka Server** : Service de découverte des microservices  
+- **Config Server** : Centralisation de la configuration des services  
+- **Keycloak** : Authentification et gestion des utilisateurs  
+- **Microservices Backend** :
+  - Microservices Spring Boot
+  - Microservice avancé en Symfony (PHP)
+- **Bases de données** : Une base par microservice  
+- **Docker** : Conteneurisation des services  
+
+---
+
+## 🧩 Microservices
+
+### Spring Boot Microservices
+
+Chaque microservice Spring Boot est indépendant et dispose de sa propre base de données :
+
+- **Test Management Service** – H2  
+- **Project Management Service** – MySQL  
+- **Reclamation Management Service** – MySQL  
+- **Payment Management Service** – H2  
+- **Post Management Service** – MySQL  
+
+### Symfony Microservice
+
+- **Collaboration Management Service**
+  - Framework : Symfony (PHP)
+  - Base de données : PostgreSQL
+  - Utilisé pour les fonctionnalités avancées
+
+---
+
+## 🛠️ Technologies utilisées
 
 ### Frontend
-
-* Angular
-* TypeScript
-* HTML / CSS
+- Angular  
+- TypeScript  
+- HTML / CSS  
 
 ### Backend
+- Java – Spring Boot  
+- PHP – Symfony  
+- RESTful APIs  
 
-* Java – Spring Boot
-* PHP – Symfony
-* RESTful APIs
+### Sécurité
+- Keycloak  
+- OAuth2 / JWT  
 
-### Databases
+### Infrastructure
+- Spring Cloud Eureka  
+- Spring Cloud Config  
+- API Gateway  
+- Docker  
 
-* H2 Database
-* MySQL
-* MongoDB
-
-### Tools & Concepts
-
-* Microservices Architecture
-* REST API
-* MVC Pattern
-* Git & GitHub
-
----
-
-## 📂 Project Structure (Example)
-
-```
-MicroService-4SAE2/
-│
-├── frontend-angular/
-│   └── angular-app/
-│
-├── backend-springboot/
-│   ├── user-service/
-│   ├── project-service/
-│   └── authentication-service/
-│
-├── backend-symfony/
-│   ├── payment-service/
-│   └── management-service/
-│
-├── databases/
-│   ├── mysql/
-│   └── mongodb/
-│
-└── README.md
-```
+### Bases de données
+- H2  
+- MySQL  
+- PostgreSQL  
 
 ---
 
-## 🎯 Features
+## 📂 Structure du projet (exemple)
 
-* User management (freelancers & clients)
-* Project and job posting
-* Freelance–project matching
-* Service-based backend (microservices)
-* Multiple database support
-
----
-
-## 🚀 How to Run the Project (General Steps)
-
-### Backend – Spring Boot
-
-1. Open the project in an IDE (IntelliJ / Eclipse)
-2. Configure `application.yml` or `application.properties`
-3. Run the Spring Boot application
-
-### Backend – Symfony
-
-1. Install dependencies:
-
-   ```bash
-   composer install
-   ```
-2. Configure `.env`
-3. Start the Symfony server
-
-### Frontend – Angular
-
-1. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-2. Run the application:
-
-   ```bash
-   ng serve
-   ```
-
----
-
-## 🎓 Academic Context
-
-This project was developed as part of the **4SAE2 academic program**, with the goal of applying:
-
-* Microservices concepts
-* Full-stack development
-* Multi-database integration
-* Modern web technologies
-
----
-
-## 👨‍💻 Author
-
-* **Student**: 4SAE2
-* **Project Type**: Academic / Educational
-
----
-
-## 📄 License
-
-This project is for **educational purposes only**.
