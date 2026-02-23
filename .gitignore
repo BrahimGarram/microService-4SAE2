@@ -1,0 +1,4 @@
+# Ignorer tous les dossiers "temp" et leurs contenus
+temp/
+build/
+logs/
