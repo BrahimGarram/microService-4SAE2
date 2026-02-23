@@ -1,82 +1,75 @@
-# MicroService-4SAE2
+# 🚀 Freelance Management Platform (Microservices Architecture)
 
-## 📌 Description
+## 📌 Overview
 
-**MicroService-4SAE2** est un projet académique basé sur une **architecture microservices** moderne, conçue pour être **scalable**, **sécurisée** et **faiblement couplée**.
+This project is a **Freelance Management Platform** designed using a modern **Microservices Architecture**.
 
-L’objectif principal est de mettre en place un système distribué où chaque microservice gère une responsabilité métier bien définie, tout en communiquant via des mécanismes standards et centralisés.
+It allows clients and freelancers to interact through multiple independent services such as:
 
-Le backend est développé avec **Spring Boot** et **Symfony (PHP)**, le frontend avec **Angular**, et la sécurité est assurée par **Keycloak**.
+- Posts management  
+- Tests management  
+- Payments management  
+- Complaints management  
+- Projects management  
 
----
+The system is built with:
 
-## 🏗️ Architecture globale
-
-Le projet repose sur une **architecture microservices complète**, incluant les composants suivants :
-
-### 🔹 Composants principaux
-
-- **Frontend** : Application web Angular  
-- **API Gateway** : Point d’entrée unique pour toutes les requêtes du frontend  
-- **Eureka Server** : Service de découverte des microservices  
-- **Config Server** : Centralisation de la configuration des services  
-- **Keycloak** : Authentification et gestion des utilisateurs  
-- **Microservices Backend** :
-  - Microservices Spring Boot
-  - Microservice avancé en Symfony (PHP)
-- **Bases de données** : Une base par microservice  
-- **Docker** : Conteneurisation des services  
+- **Spring Boot** for backend microservices  
+- **Angular** for the frontend  
+- **API Gateway** as the single entry point  
+- **Keycloak** for user authentication and authorization  
+- A centralized database for freelance-related data  
 
 ---
 
-## 🧩 Microservices
+## 🏗️ Architecture
 
-### Spring Boot Microservices
+The application follows this architecture:
 
-Chaque microservice Spring Boot est indépendant et dispose de sa propre base de données :
+Client/User → Angular Frontend → API Gateway → Spring Boot Microservices → Database
 
-- **Test Management Service** – H2  
-- **Project Management Service** – MySQL  
-- **Reclamation Management Service** – MySQL  
-- **Payment Management Service** – H2  
-- **Post Management Service** – MySQL  
+### Microservices Included:
 
-### Symfony Microservice
-
-- **Collaboration Management Service**
-  - Framework : Symfony (PHP)
-  - Base de données : PostgreSQL
-  - Utilisé pour les fonctionnalités avancées
+| Service Name | Description |
+|------------|-------------|
+| Post Service | Manages posts published by clients/freelancers |
+| Test Service | Handles technical tests and evaluations |
+| Payment Service | Manages payments and transactions |
+| Reclamation Service | Handles user complaints and support requests |
+| Project Service | Manages freelance projects and assignments |
+| User Service | User management secured with Keycloak |
 
 ---
 
-## 🛠️ Technologies utilisées
+## 🔐 User Management with Keycloak
 
-### Frontend
-- Angular  
-- TypeScript  
-- HTML / CSS  
+Authentication and authorization are handled using **Keycloak**, providing:
 
-### Backend
-- Java – Spring Boot  
-- PHP – Symfony  
-- RESTful APIs  
+- Secure login and registration  
+- Role-based access control (Admin, Client, Freelancer)  
+- Token-based authentication (JWT)  
+- Centralized identity management  
 
-### Sécurité
-- Keycloak  
-- OAuth2 / JWT  
-
-### Infrastructure
-- Spring Cloud Eureka  
-- Spring Cloud Config  
-- API Gateway  
-- Docker  
-
-### Bases de données
-- H2  
-- MySQL  
-- PostgreSQL  
+Keycloak is integrated with the API Gateway to protect all backend services.
 
 ---
+
+## ⚙️ Technologies Used
+
+### Backend:
+- Java 17+
+- Spring Boot
+- Spring Cloud Gateway
+- Spring Cloud Netflix Eureka (Service Discovery)
+- Spring Security
+- Keycloak Integration
+
+### Frontend:
+- Angular
+- TypeScript
+- Bootstrap / Material UI
+
+### Database:
+- MySQL 
 
 
