@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="9eef1a05-20da-4580-86cb-9ceba4ea9216" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/service-test/src/main/java/com/example/servicetest/entity/QuestionTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/service-test/src/main/java/com/example/servicetest/entity/QuestionTest.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 0
+}]]></component>
+  <component name="ProjectId" id="39ijXgRjka0iHQnJjwg6T58LF9s" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "feature/test-service",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/21694/Desktop/freelance-management/services/testService/service-test",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-b114ca120d71-intellij.indexing.shared.core-IU-242.21829.142" />
+        <option value="bundled-js-predefined-d6986cc7102b-7c0b70fcd90d-JavaScript-IU-242.21829.142" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="9eef1a05-20da-4580-86cb-9ceba4ea9216" name="Changes" comment="" />
+      <created>1771185827191</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1771185827191</updated>
+      <workItem from="1771185828268" duration="47000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="com.apollographql.ijplugin.settings.ProjectSettingsState">
+    <option name="hasEnabledGraphQLPluginApolloKotlinSupport" value="true" />
+    <option name="lspPassPathToSuperGraphYaml" value="false" />
+    <option name="telemetryInstanceId" value="9a2ffb9c-8a3f-43ce-bcd0-ef2bc54d7320" />
+  </component>
+</project>
