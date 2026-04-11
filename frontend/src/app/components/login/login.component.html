@@ -1,0 +1,91 @@
+<div class="login-page">
+  <div class="login-background">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="gradient-orb orb-3"></div>
+  </div>
+  
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="logo-section">
+          <img src="assets/new/logo.png" alt="Freelancify" class="auth-logo" onerror="this.src='assets/logo.png'">
+          <h1>Welcome Back</h1>
+          <p>Sign in to your account to continue</p>
+        </div>
+      </div>
+      
+      <form class="login-form" (ngSubmit)="onSignIn()">
+        <div class="form-group">
+          <label for="signin-username">
+            <i class="fas fa-user"></i> Username or Email
+          </label>
+          <input 
+            type="text" 
+            id="signin-username" 
+            [(ngModel)]="signInForm.username" 
+            name="signin-username"
+            placeholder="Enter your username or email"
+            required>
+        </div>
+        
+        <div class="form-group">
+          <label for="signin-password">
+            <i class="fas fa-lock"></i> Password
+          </label>
+          <input 
+            type="password" 
+            id="signin-password" 
+            [(ngModel)]="signInForm.password" 
+            name="signin-password"
+            placeholder="Enter your password"
+            required>
+        </div>
+        
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="signInForm.rememberMe" name="rememberMe">
+            <span>Remember me</span>
+          </label>
+          <a routerLink="/forgot-password" class="forgot-password">Forgot password?</a>
+        </div>
+        
+        <button type="submit" class="btn-login" [disabled]="isLoading">
+          <span *ngIf="!isLoading">
+            <i class="fas fa-sign-in-alt"></i> Sign In
+          </span>
+          <span *ngIf="isLoading">
+            <i class="fas fa-spinner fa-spin"></i> Signing in...
+          </span>
+        </button>
+        
+        <div *ngIf="signInError" class="error-message">
+          <i class="fas fa-exclamation-circle"></i> {{ signInError }}
+        </div>
+      </form>
+      
+      <div class="auth-divider">
+        <span>Or continue with</span>
+      </div>
+      
+      <div class="social-auth">
+        <button class="btn-social btn-google" (click)="loginWithGoogle()">
+          <i class="fab fa-google"></i>
+          <span>Sign in with Google</span>
+        </button>
+        <button class="btn-social btn-github" (click)="loginWithGitHub()">
+          <i class="fab fa-github"></i>
+          <span>Sign in with GitHub</span>
+        </button>
+        <button class="btn-social btn-keycloak" (click)="loginWithKeycloak()">
+          <i class="fas fa-key"></i>
+          <span>Keycloak SSO</span>
+        </button>
+      </div>
+      
+      <div class="login-footer">
+        <p>Don't have an account? <a routerLink="/signup">Sign Up</a></p>
+      </div>
+    </div>
+  </div>
+</div>

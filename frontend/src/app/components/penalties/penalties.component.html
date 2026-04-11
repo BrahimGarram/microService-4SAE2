@@ -1,0 +1,124 @@
+<div class="penalties-container">
+  <!-- Account Status Bar -->
+  <div class="account-status-bar" [ngClass]="getStatusBarClass()">
+    <div class="status-bar-content">
+      <div class="status-info">
+        <i class="fas" [ngClass]="getStatusIcon()"></i>
+        <span class="status-text">{{ getStatusText() }}</span>
+        <span *ngIf="countdownText" class="countdown-timer">
+          <i class="fas fa-clock"></i> {{ countdownText }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-header">
+    <h1>
+      <i class="fas fa-gavel"></i>
+      My Penalties
+    </h1>
+    <p class="subtitle">View your active penalties and restrictions</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading penalties...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-container">
+    <i class="fas fa-exclamation-circle"></i>
+    <p>{{ error }}</p>
+    <button class="retry-btn" (click)="loadPenalties()">Retry</button>
+  </div>
+
+  <!-- No Penalties State -->
+  <div *ngIf="!loading && !error && penalties.length === 0" class="no-penalties">
+    <i class="fas fa-check-circle"></i>
+    <h3>No Active Penalties</h3>
+    <p>You have a clean record! Keep up the good work.</p>
+  </div>
+
+  <!-- Penalties List -->
+  <div *ngIf="!loading && !error && penalties.length > 0" class="penalties-list">
+    <div class="penalty-card" *ngFor="let penalty of penalties" [ngClass]="getPenaltyTypeClass(penalty.penaltyType)">
+      <div class="penalty-header">
+        <div class="penalty-icon">
+          <i class="fas" [ngClass]="getPenaltyIcon(penalty.penaltyType)"></i>
+        </div>
+        <div class="penalty-title-section">
+          <h3 class="penalty-title">{{ penalty.reason }}</h3>
+          <div class="penalty-badges">
+            <span class="penalty-type-badge">{{ penalty.penaltyType.replace('_', ' ') }}</span>
+            <span class="severity-badge" [ngClass]="getSeverityClass(penalty.severity)">
+              {{ penalty.severity }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="penalty-body">
+        <p class="penalty-description">{{ penalty.description }}</p>
+
+        <div class="penalty-details">
+          <div class="detail-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span><strong>Applied:</strong> {{ formatDate(penalty.appliedAt) }}</span>
+          </div>
+
+          <div class="detail-item" *ngIf="penalty.expiresAt">
+            <i class="fas fa-clock"></i>
+            <span>
+              <strong>Expires:</strong> {{ formatDate(penalty.expiresAt) }}
+            </span>
+          </div>
+
+          <div class="detail-item countdown-item" *ngIf="penalty.expiresAt">
+            <i class="fas fa-hourglass-half"></i>
+            <span class="live-countdown">
+              <strong>Time Remaining:</strong> 
+              <span class="countdown-value">{{ getCountdownForPenalty(penalty) }}</span>
+            </span>
+          </div>
+
+          <div class="detail-item" *ngIf="!penalty.expiresAt">
+            <i class="fas fa-infinity"></i>
+            <span><strong>Duration:</strong> Permanent</span>
+          </div>
+
+          <div class="detail-item" *ngIf="penalty.fineAmount">
+            <i class="fas fa-dollar-sign"></i>
+            <span><strong>Fine Amount:</strong> ${{ penalty.fineAmount.toFixed(2) }}</span>
+          </div>
+
+          <div class="detail-item" *ngIf="penalty.complaintId">
+            <i class="fas fa-file-alt"></i>
+            <span><strong>Related Complaint:</strong> #{{ penalty.complaintId }}</span>
+          </div>
+        </div>
+
+        <div class="penalty-status" *ngIf="penalty.isActive">
+          <i class="fas fa-exclamation-circle"></i>
+          <span>This penalty is currently active</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Box -->
+  <div *ngIf="!loading && !error" class="info-box">
+    <i class="fas fa-info-circle"></i>
+    <div class="info-content">
+      <h4>About Penalties</h4>
+      <p>Penalties are applied automatically based on your complaint patterns to maintain platform quality. 
+         If you believe a penalty was applied in error, please contact support.</p>
+      <ul>
+        <li><strong>WARNING:</strong> First offense notification</li>
+        <li><strong>ACCOUNT RESTRICTION:</strong> Limited features temporarily</li>
+        <li><strong>TEMPORARY SUSPENSION:</strong> Account suspended for review</li>
+        <li><strong>FINE:</strong> Monetary penalty for violations</li>
+      </ul>
+    </div>
+  </div>
+</div>

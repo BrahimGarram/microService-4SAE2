@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: freelance-platform-spring-app
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/freelancify-local?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: ""
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: cw.club102@gmail.com
+    password: mejwmoqbngvmqkts
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  task:
+    scheduling:
+      enabled: true
+
+  web:
+    cors:
+      allowed-origins:
+        - "http://localhost:4200"
+        - "http://localhost:8080"
+      allowed-methods:
+        - "GET"
+        - "POST"
+        - "PUT"
+        - "DELETE"
+        - "OPTIONS"
+      allowed-headers: "*"
+      allow-credentials: true
+
+server:
+  port: 8092
+  servlet:
+    context-path: /freelancity
+
+# Eureka Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+app:
+  frontend:
+    url: http://localhost:4200
+  base-url: http://localhost:4200
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    com.freelance: DEBUG

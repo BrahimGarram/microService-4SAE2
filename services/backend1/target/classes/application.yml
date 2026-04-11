@@ -1,0 +1,104 @@
+spring:
+  application:
+    name: user-service
+
+  # MySQL Database Configuration
+  datasource:
+    url: jdbc:mysql://localhost:3306/freelance_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: ""
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  # Keycloak OAuth2 Resource Server Configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/projetpidev
+          jwk-set-uri: http://localhost:8080/realms/projetpidev/protocol/openid-connect/certs
+
+  # Email Configuration
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: sahem.index@gmail.com
+    password: qwfzcavugntkgdev
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+# ===============================
+# Server Configuration
+# ===============================
+server:
+  port: 8081
+
+# ===============================
+# ✅ Eureka Configuration
+# ===============================
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+# ===============================
+# Keycloak Admin Configuration
+# ===============================
+keycloak:
+  admin:
+    url: http://localhost:8080
+    username: admin
+    password: admin
+    realm: projetpidev
+
+# ===============================
+# Application Configuration
+# ===============================
+app:
+  frontend:
+    url: http://localhost:4200
+  mail:
+    from: sahem.index@gmail.com
+    from-name: Freelancify
+  upload:
+    dir: uploads
+  base:
+    url: http://localhost:8081
+
+# ===============================
+# Ollama (Local LLM)
+# ===============================
+ollama:
+  base-url: http://localhost:11434
+  model: qwen2.5:3b
+  chat-model: llama3.2
+  timeout-seconds: 60
+
+# ===============================
+# Logging Configuration
+# ===============================
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    com.freelance: DEBUG
