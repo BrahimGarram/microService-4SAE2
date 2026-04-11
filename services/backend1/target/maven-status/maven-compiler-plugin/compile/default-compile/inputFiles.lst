@@ -24,6 +24,7 @@ C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\j
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\service\GroupChatService.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\repository\SkillRepository.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\model\UserRole.java
+C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\config\DockerResourceServerJwtConfig.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\dto\NotificationDTO.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\repository\GroupChatInvitationRepository.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\repository\GroupChatMemberRepository.java

@@ -1,0 +1,393 @@
+<div class="dashboard-content">
+  <!-- Account Status Bar -->
+  <div class="account-status-bar" [ngClass]="getStatusBarClass()">
+    <div class="status-bar-content">
+      <div class="status-info">
+        <i class="fas" [ngClass]="getStatusIcon()"></i>
+        <span class="status-text">{{ getStatusText() }}</span>
+        <span *ngIf="countdownText" class="countdown-timer">
+          <i class="fas fa-clock"></i> {{ countdownText }}
+        </span>
+      </div>
+      <button *ngIf="hasActivePenalties" class="btn-status-details" (click)="viewPenalties()">
+        <i class="fas fa-info-circle"></i> Details
+      </button>
+    </div>
+  </div>
+
+  <div class="dashboard-header">
+    <h1>My Claims</h1>
+  </div>
+
+  <!-- Penalty Alert Banner -->
+  <div *ngIf="hasActivePenalties" class="penalty-alert-banner" [ngClass]="getPenaltyAlertClass()">
+    <div class="penalty-alert-content">
+      <i class="fas fa-exclamation-triangle"></i>
+      <div class="penalty-alert-text">
+        <strong>You have {{ activePenalties.length }} active penalty(ies)</strong>
+        <p>Your account has been flagged for violations. Click to view details.</p>
+      </div>
+      <button class="btn-view-penalties" (click)="viewPenalties()">
+        <i class="fas fa-gavel"></i> View Penalties
+      </button>
+    </div>
+  </div>
+
+  <!-- Create Claim -->
+  <div class="widgets-grid">
+    <div class="widget-card" [class.disabled-card]="isAccountRestricted">
+      <div class="widget-header">
+        <div>
+          <h3>Create a Claim</h3>
+          <p class="widget-subtitle">
+            <span *ngIf="!isAccountRestricted">Submit a new complaint for review</span>
+            <span *ngIf="isAccountRestricted" class="restriction-notice">
+              <i class="fas fa-lock"></i> Form disabled due to account restrictions
+            </span>
+          </p>
+        </div>
+        <i class="fas fa-plus-circle"></i>
+      </div>
+
+      <div class="claim-form">
+        <div class="form-grid">
+          <div class="form-group fancy-select">
+            <label>Complaint type</label>
+            <div class="select-with-icon">
+              <i class="fas fa-list"></i>
+              <select
+                class="filter-select complaint-type-select"
+                [(ngModel)]="newClaim.type"
+                name="type"
+                [disabled]="isAccountRestricted">
+                <ng-container *ngFor="let group of complaintTypes">
+                  <optgroup [label]="group.group">
+                    <option *ngFor="let item of group.items" [value]="item">
+                      {{ item }}
+                    </option>
+                  </optgroup>
+                </ng-container>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group fancy-select">
+            <label>Priority</label>
+            <div class="select-with-icon">
+              <i class="fas fa-flag"></i>
+              <select 
+                class="filter-select complaint-type-select ng-valid ng-dirty ng-touched" 
+                [(ngModel)]="newClaim.claimPriority" 
+                name="priority"
+                [disabled]="isAccountRestricted">
+                <option value="Urgent">🔴 Urgent</option>
+                <option value="High">🟠 High</option>
+                <option value="Medium">🟡 Medium</option>
+                <option value="Low">🟢 Low</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea
+            [(ngModel)]="newClaim.description"
+            name="description"
+            rows="4"
+            placeholder="Describe the problem in detail"
+            [disabled]="isAccountRestricted"
+          ></textarea>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Attachment (optional)</label>
+            <label class="file-upload" [class.disabled]="isAccountRestricted">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <span>{{ newClaim.attachmentName || 'Choose a file' }}</span>
+              <input
+                type="file"
+                name="attachmentFile"
+                (change)="onFileSelected($event)"
+                [disabled]="isAccountRestricted"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button 
+            class="refresh-btn" 
+            (click)="submitClaim()" 
+            [disabled]="creating || isAccountRestricted">
+            <i class="fas fa-paper-plane" [class.fa-spin]="creating"></i>
+            {{ creating ? 'Submitting...' : (isAccountRestricted ? 'Account Restricted' : 'Submit Claim') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading your claims...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-container">
+    <i class="fas fa-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+    <button class="retry-btn" (click)="loadComplaints()">Retry</button>
+  </div>
+
+  <!-- Claims List -->
+  <div *ngIf="!loading && !error" class="widgets-grid">
+    <div class="widget-card">
+      <div class="widget-header">
+        <div>
+          <h3>Your Claims</h3>
+          <p class="widget-subtitle">All complaints you have submitted</p>
+        </div>
+        <div class="filters">
+          <div class="select-with-icon small">
+            <i class="fas fa-filter"></i>
+            <select class="filter-select complaint-type-select ng-valid ng-dirty ng-touched" [(ngModel)]="statusFilter" name="statusFilter">
+              <option value="ALL">All statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Under_Review">Under review</option>
+              <option value="Resolved">Resolved</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </div>
+          <div class="select-with-icon small">
+            <i class="fas fa-flag"></i>
+            <select class="filter-select complaint-type-select ng-valid ng-dirty ng-touched" [(ngModel)]="priorityFilter" name="priorityFilter">
+              <option value="ALL">All priorities</option>
+              <option value="Urgent">Urgent</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="complaints.length === 0" class="projects-empty">
+        <i class="fas fa-folder-open"></i>
+        <p>No claims found</p>
+        <p class="empty-hint">You haven't submitted any claims yet.</p>
+      </div>
+
+      <!-- Claims List -->
+      <div *ngIf="filteredComplaints.length > 0" class="activity-list">
+        <div class="activity-item" *ngFor="let claim of filteredComplaints" (click)="openClaimDetails(claim); $event.stopPropagation()">
+          <div
+            class="activity-icon"
+            style="background: rgba(255, 107, 53, 0.1); color: #FF6B35;"
+          >
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="activity-content">
+            <div class="claim-title-row">
+              <h4>{{ claim.title }}</h4>
+              <div class="badges">
+                <span [ngClass]="getPriorityBadgeClass(claim.claimPriority)">
+                  {{ claim.claimPriority }}
+                </span>
+                <span [ngClass]="getStatusBadgeClass(claim.claimStatus)">
+                  {{ claim.claimStatus === 'Under_Review' ? 'Under review' : claim.claimStatus }}
+                </span>
+              </div>
+            </div>
+            <p>{{ claim.description }}</p>
+            <div class="activity-time meta-row">
+              <span><i class="fas fa-calendar"></i> {{ formatDate(claim.createdAt) }}</span>
+              <a *ngIf="claim.claimAttachment?.fileUrl"
+                 class="attachment-link"
+                 [href]="getFullFileUrl(claim.claimAttachment?.fileUrl)"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 (click)="$event.stopPropagation()">
+                <i class="fas fa-paperclip"></i>
+                {{ claim.claimAttachment?.fileName || 'Attachment' }}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Claim Details Modal -->
+<div class="modal-overlay" *ngIf="selectedClaim" (click)="closeClaimDetails()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>
+        <i class="fas fa-file-alt"></i>
+        Claim Details
+      </h2>
+      <button class="close-btn" (click)="closeClaimDetails()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Claim Information -->
+      <div class="detail-section">
+        <h3>Claim Information</h3>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <label><i class="fas fa-heading"></i> Topic</label>
+            <span>{{ selectedClaim.title }}</span>
+          </div>          
+          <div class="detail-item">
+            <label><i class="fas fa-flag"></i> Priority</label>
+            <span [ngClass]="getPriorityBadgeClass(selectedClaim.claimPriority)">
+              {{ selectedClaim.claimPriority }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <label><i class="fas fa-info-circle"></i> Status</label>
+            <span [ngClass]="getStatusBadgeClass(selectedClaim.claimStatus)">
+              {{ selectedClaim.claimStatus === 'Under_Review' ? 'Under review' : selectedClaim.claimStatus }}
+            </span>
+          </div>
+          <div class="detail-item full-width">
+            <label><i class="fas fa-align-left"></i> Description</label>
+            <p class="description-text">{{ selectedClaim.description }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dates -->
+      <div class="detail-section">
+        <h3>Timeline</h3>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <label><i class="fas fa-calendar-plus"></i> Created At</label>
+            <span>{{ formatDateTime(selectedClaim.createdAt) }}</span>
+          </div>
+          <div class="detail-item">
+            <label><i class="fas fa-calendar-check"></i> Updated At</label>
+            <span>{{ formatDateTime(selectedClaim.updatedAt) }}</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedClaim.resolvedAt">
+            <label><i class="fas fa-calendar-check"></i> Resolved At</label>
+            <span>{{ formatDateTime(selectedClaim.resolvedAt) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resolution Note -->
+      <div class="detail-section" *ngIf="selectedClaim.resolutionNote">
+        <h3>Resolution Note</h3>
+        <div class="resolution-note">
+          <i class="fas fa-comment-dots"></i>
+          <p>{{ selectedClaim.resolutionNote }}</p>
+        </div>
+      </div>
+
+      <!-- Attachment Information -->
+      <div class="detail-section" *ngIf="selectedClaim.claimAttachment">
+        <h3>Attachment Details</h3>
+        <div class="attachment-details">
+          <div class="attachment-preview">
+            <i class="fas fa-file-alt"></i>
+          </div>
+          <div class="attachment-info">
+            <div class="detail-item">
+              <label><i class="fas fa-file"></i> File Name</label>
+              <span>{{ selectedClaim.claimAttachment.fileName || 'N/A' }}</span>
+            </div>
+            <div class="detail-item">
+              <label><i class="fas fa-file-code"></i> File Type</label>
+              <span>{{ selectedClaim.claimAttachment.fileType || 'N/A' }}</span>
+            </div>
+            <div class="detail-item">
+              <label><i class="fas fa-weight"></i> File Size</label>
+              <span>{{ formatFileSize(selectedClaim.claimAttachment.fileSize) }}</span>
+            </div>
+            <div class="detail-item">
+              <label><i class="fas fa-calendar-alt"></i> Uploaded At</label>
+              <span>{{ formatDateTime(selectedClaim.claimAttachment.uploadedAt) }}</span>
+            </div>
+            <div class="detail-item full-width">
+              <a 
+                *ngIf="selectedClaim.claimAttachment.fileUrl"
+                [href]="getFullFileUrl(selectedClaim.claimAttachment.fileUrl)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="download-btn">
+                <i class="fas fa-download"></i>
+                Download Attachment
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Mode -->
+      <div class="detail-section" *ngIf="isEditMode">
+        <h3>Edit Claim</h3>
+        <div class="edit-form">
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" [(ngModel)]="editClaim.title" name="editTitle" placeholder="Claim title">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea [(ngModel)]="editClaim.description" name="editDescription" rows="4" placeholder="Describe your issue"></textarea>
+          </div>
+          <div class="form-group fancy-select">
+            <label>Priority</label>
+            <div class="select-with-icon">
+              <i class="fas fa-flag"></i>
+              <select [(ngModel)]="editClaim.claimPriority" name="editPriority" class="filter-select complaint-type-select">
+                <option value="Urgent">🔴 Urgent</option>
+                <option value="High">🟠 High</option>
+                <option value="Medium">🟡 Medium</option>
+                <option value="Low">🟢 Low</option>
+              </select>
+            </div>
+          </div>
+          <div class="info-note">
+            <i class="fas fa-info-circle"></i>
+            Note: Status changes are managed by administrators only
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button 
+        class="btn-warning" 
+        (click)="toggleEditMode()" 
+        *ngIf="!isEditMode && canEditClaim()"
+        [title]="canEditClaim() ? 'Edit this claim' : 'Cannot edit claims that are under review or resolved'">
+        <i class="fas fa-edit"></i>
+        Edit Claim
+      </button>
+      <div class="edit-disabled-info" *ngIf="!isEditMode && !canEditClaim()">
+        <i class="fas fa-info-circle"></i>
+        <span>This claim cannot be edited (Status: {{ selectedClaim?.claimStatus }})</span>
+      </div>
+      <button class="btn-success" (click)="updateClaim()" *ngIf="isEditMode" [disabled]="updating">
+        <i class="fas fa-save" [class.fa-spin]="updating"></i>
+        {{ updating ? 'Saving...' : 'Save Changes' }}
+      </button>
+      <button class="btn-secondary" (click)="cancelEdit()" *ngIf="isEditMode">
+        <i class="fas fa-times"></i>
+        Cancel
+      </button>
+      <button class="btn-danger" (click)="confirmDelete()" [disabled]="deleting">
+        <i class="fas fa-trash" [class.fa-spin]="deleting"></i>
+        {{ deleting ? 'Deleting...' : 'Delete Claim' }}
+      </button>
+    </div>
+  </div>
+</div>

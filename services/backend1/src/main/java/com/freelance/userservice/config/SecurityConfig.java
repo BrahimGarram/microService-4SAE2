@@ -61,6 +61,7 @@ public class SecurityConfig {
             
             // Configure authorization rules
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 // WebSocket upgrade for WebRTC signaling (JWT validated in handshake interceptor)
                 .requestMatchers("/ws/**").permitAll()
                 // Public endpoints (no authentication required)

@@ -1,0 +1,176 @@
+<div class="feed-page" [class.full-screen-mode]="fullScreenMode">
+  <header class="feed-header">
+    <h1>Feed</h1>
+    <button type="button" class="btn-create" (click)="openCreateModal()">
+      <i class="fas fa-plus"></i> Nouveau post
+    </button>
+  </header>
+
+  <div class="feed-toolbar">
+    <div class="tabs">
+      <button type="button" class="tab" [class.active]="activeTab === 'pour-toi'" (click)="setTab('pour-toi')">Pour toi</button>
+      <button type="button" class="tab" [class.active]="activeTab === 'abonnements'" (click)="setTab('abonnements')">Abonnements</button>
+      <a routerLink="/feed/abonnements" class="tab tab-link"><i class="fas fa-user-plus"></i> Qui suivre</a>
+    </div>
+    <div class="filters">
+      <button type="button" class="filter-btn" [class.active]="filterType === null" (click)="setFilter(null)">Tout</button>
+      <button type="button" class="filter-btn" [class.active]="filterType === 'VIDEO'" (click)="setFilter('VIDEO')">Vidéo</button>
+      <button type="button" class="filter-btn" [class.active]="filterType === 'IMAGE'" (click)="setFilter('IMAGE')">Image</button>
+      <button type="button" class="filter-btn" [class.active]="filterType === 'TEXT'" (click)="setFilter('TEXT')">Texte</button>
+      <select class="sort-select" [ngModel]="sort" (ngModelChange)="setSort($event)">
+        <option value="recent">Récents</option>
+        <option value="popular">Populaires</option>
+      </select>
+    </div>
+    <div class="search-row">
+      <input type="text" class="search-input" [(ngModel)]="searchQuery" (keyup.enter)="onSearch()" placeholder="Rechercher (légende, #hashtag)...">
+      <button type="button" class="btn-search" (click)="onSearch()"><i class="fas fa-search"></i></button>
+    </div>
+    <button type="button" class="btn-view-mode" (click)="toggleFullScreen()" [title]="fullScreenMode ? 'Mode liste' : 'Mode plein écran'">
+      <i class="fas" [ngClass]="fullScreenMode ? 'fa-list' : 'fa-expand'"></i>
+    </button>
+  </div>
+
+  <div class="feed-list" [class.feed-list-fullscreen]="fullScreenMode" *ngIf="!loading && posts.length > 0">
+    <article class="post-card" [class.post-card-fullscreen]="fullScreenMode" *ngFor="let post of posts">
+      <div class="post-author">
+        <a [routerLink]="['/user', post.userId]" class="author-avatar" [style.backgroundImage]="post.userProfilePictureUrl ? 'url(' + post.userProfilePictureUrl + ')' : 'none'">
+          <span *ngIf="!post.userProfilePictureUrl" class="author-initial">{{ post.username?.charAt(0) | uppercase }}</span>
+        </a>
+        <div class="author-info">
+          <a [routerLink]="['/user', post.userId]" class="author-name">{{ post.username }}</a>
+          <span class="post-date">{{ post.createdAt | date:'short' }}</span>
+        </div>
+      </div>
+      <div class="post-media-wrap" (dblclick)="onDoubleTap(post, $event)">
+        <div class="heart-burst" *ngIf="heartAnimPostId === post.id">
+          <i class="fas fa-heart"></i>
+        </div>
+        <ng-container *ngIf="getMediaList(post).length > 0">
+          <div class="carousel" *ngIf="getMediaList(post).length > 1">
+            <div class="carousel-inner">
+              <div class="carousel-item" *ngFor="let url of getMediaList(post); let i = index" [class.active]="getCarouselIndex(post.id) === i">
+                <img *ngIf="post.type !== 'VIDEO' || i > 0" [src]="url" [alt]="post.caption || 'Image'" loading="lazy">
+                <video *ngIf="post.type === 'VIDEO' && i === 0" muted loop playsinline (click)="toggleVideoMute($event)" [src]="url" preload="metadata"></video>
+              </div>
+            </div>
+            <button type="button" class="carousel-btn carousel-prev" (click)="carouselPrev(post.id)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <button type="button" class="carousel-btn carousel-next" (click)="carouselNext(post.id, post)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+            <div class="carousel-dots">
+              <span *ngFor="let url of getMediaList(post); let i = index" class="dot" [class.active]="getCarouselIndex(post.id) === i" (click)="setCarouselIndex(post.id, i)"></span>
+            </div>
+          </div>
+          <div class="post-media single-media" *ngIf="getMediaList(post).length === 1">
+            <video *ngIf="post.type === 'VIDEO'" muted loop playsinline (click)="toggleVideoMute($event)" [src]="getMediaList(post)[0]" preload="metadata"></video>
+            <img *ngIf="post.type === 'IMAGE'" [src]="getMediaList(post)[0]" [alt]="post.caption || 'Image'" loading="lazy">
+          </div>
+        </ng-container>
+      </div>
+      <div class="post-caption" *ngIf="post.caption">
+        <span *ngFor="let seg of parseCaption(post.caption)">
+          <ng-container *ngIf="seg.type === 'text'">{{ seg.value }}</ng-container>
+          <a *ngIf="seg.type === 'hashtag'" (click)="goToHashtag(seg.value)" class="caption-link hashtag">{{ seg.value }}</a>
+          <a *ngIf="seg.type === 'mention'" (click)="goToMention(seg.value)" class="caption-link mention">{{ seg.value }}</a>
+        </span>
+      </div>
+      <div class="post-actions">
+        <button type="button" class="action-btn like-btn" [class.liked]="post.likedByCurrentUser" (click)="toggleLike(post)" [attr.aria-label]="post.likedByCurrentUser ? 'Ne plus aimer' : 'Aimer'">
+          <i class="fas fa-heart"></i>
+          <span>{{ post.likeCount }}</span>
+        </button>
+        <button type="button" class="action-btn" (click)="openComments(post)" [attr.aria-label]="'Commentaires'">
+          <i class="fas fa-comment"></i>
+          <span>{{ post.commentCount ?? 0 }}</span>
+        </button>
+        <button type="button" class="action-btn" (click)="sharePost(post)" aria-label="Partager">
+          <i class="fas fa-share-alt"></i>
+          <span>Partager</span>
+        </button>
+      </div>
+    </article>
+    <div class="load-more" *ngIf="loadingMore">
+      <i class="fas fa-spinner fa-spin"></i> Chargement...
+    </div>
+  </div>
+
+  <div class="feed-empty" *ngIf="!loading && posts.length === 0">
+    <p>{{ activeTab === 'abonnements' ? 'Suivez des utilisateurs pour voir leurs posts ici.' : 'Aucun post pour le moment.' }}</p>
+    <a *ngIf="activeTab === 'abonnements'" routerLink="/feed/abonnements" class="btn-create"><i class="fas fa-user-plus"></i> Découvrir des comptes</a>
+    <button type="button" class="btn-create" (click)="openCreateModal()" *ngIf="activeTab === 'pour-toi'"><i class="fas fa-plus"></i> Créer un post</button>
+  </div>
+
+  <div class="feed-loading" *ngIf="loading">
+    <i class="fas fa-spinner fa-spin"></i> Chargement du feed...
+  </div>
+</div>
+
+<!-- Modal commentaires -->
+<div class="modal-overlay" *ngIf="showCommentsForPostId !== null" (click)="closeComments()">
+  <div class="modal-content modal-comments" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Commentaires</h2>
+      <button type="button" class="modal-close" (click)="closeComments()" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="modal-body comments-list">
+      <div class="comments-loading" *ngIf="loadingComments && comments.length === 0"><i class="fas fa-spinner fa-spin"></i></div>
+      <div class="comment-item" *ngFor="let c of comments">
+        <a [routerLink]="['/user', c.userId]" class="comment-avatar" [style.backgroundImage]="c.userProfilePictureUrl ? 'url(' + c.userProfilePictureUrl + ')' : 'none'">
+          <span *ngIf="!c.userProfilePictureUrl">{{ c.username?.charAt(0) | uppercase }}</span>
+        </a>
+        <div class="comment-body">
+          <a [routerLink]="['/user', c.userId]" class="comment-username">{{ c.username }}</a>
+          <p class="comment-text">{{ c.content }}</p>
+          <span class="comment-date">{{ c.createdAt | date:'short' }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer comment-form">
+      <input type="text" [(ngModel)]="addCommentText" (keyup.enter)="submitComment()" placeholder="Ajouter un commentaire..." maxlength="500">
+      <button type="button" class="btn-submit" (click)="submitComment()" [disabled]="submittingComment || !addCommentText.trim()">
+        <i class="fas fa-spinner fa-spin" *ngIf="submittingComment"></i>
+        <i class="fas fa-paper-plane" *ngIf="!submittingComment"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal création -->
+<div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Nouveau post</h2>
+      <button type="button" class="modal-close" (click)="closeCreateModal()" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Type</label>
+        <select [(ngModel)]="createType" name="createType">
+          <option value="TEXT">Texte seul</option>
+          <option value="IMAGE">Image</option>
+          <option value="VIDEO">Vidéo</option>
+        </select>
+      </div>
+      <div class="form-group" *ngIf="createType === 'IMAGE' || createType === 'VIDEO'">
+        <label>Fichier ({{ createType === 'VIDEO' ? 'vidéo max 50 Mo' : 'image max 10 Mo' }})</label>
+        <input type="file" [accept]="createType === 'VIDEO' ? 'video/*' : 'image/*'" (change)="onFileSelected($event)">
+        <span class="file-name" *ngIf="createFile">{{ createFile.name }}</span>
+      </div>
+      <div class="form-group">
+        <label>Légende (optionnel) — utilisez #hashtag et &#64;username</label>
+        <textarea [(ngModel)]="createCaption" name="createCaption" rows="3" placeholder="Écrivez une légende..."></textarea>
+      </div>
+      <p class="error-msg" *ngIf="createError">{{ createError }}</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeCreateModal()">Annuler</button>
+      <button type="button" class="btn-submit" (click)="submitPost()" [disabled]="creating">
+        <i class="fas fa-spinner fa-spin" *ngIf="creating"></i>
+        <span *ngIf="!creating">Publier</span>
+      </button>
+    </div>
+  </div>
+</div>

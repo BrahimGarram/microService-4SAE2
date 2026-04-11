@@ -1,0 +1,93 @@
+<!-- Hero Section -->
+<div class="hero-section">
+  <div class="hero-background">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="gradient-orb orb-3"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <i class="fas fa-rocket"></i>
+      <span>Welcome to Freelancify</span>
+    </div>
+    <h1 class="hero-title">
+      Find the Best
+      <span class="gradient-text">Freelancers</span>
+      <br>for Your Projects
+    </h1>
+    <p class="hero-description">
+      Connect with talented professionals and get your projects done faster.
+      Join thousands of clients and freelancers already using our platform.
+    </p>
+    <div class="hero-actions">
+      <a *ngIf="!isLoggedIn" routerLink="/login" class="btn-hero btn-primary-hero">
+        <span>Get Started</span>
+        <i class="fas fa-arrow-right"></i>
+      </a>
+      <a *ngIf="isLoggedIn" routerLink="/profile" class="btn-hero btn-primary-hero">
+        <span>View Profile</span>
+        <i class="fas fa-user"></i>
+      </a>
+      <a *ngIf="!isLoggedIn" routerLink="/login" class="btn-hero btn-secondary-hero">
+        <i class="fas fa-play-circle"></i>
+        <span>Watch Demo</span>
+      </a>
+      <a *ngIf="isLoggedIn" routerLink="/projects" class="btn-hero btn-secondary-hero">
+        <i class="fas fa-briefcase"></i>
+        <span>My Projects</span>
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-number">10K+</div>
+        <div class="stat-label">Active Users</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">5K+</div>
+        <div class="stat-label">Projects Completed</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">98%</div>
+        <div class="stat-label">Satisfaction Rate</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Features Section -->
+<div class="features-section">
+  <div class="container">
+    <h2 class="section-title">Why Choose Freelancify?</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <h3>Expert Talent</h3>
+        <p>Access to a pool of verified professionals across various fields</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-shield-alt"></i>
+        </div>
+        <h3>Secure Payments</h3>
+        <p>Safe and secure payment processing with escrow protection</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <h3>Fast Delivery</h3>
+        <p>Get your projects completed on time with quality assurance</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-headset"></i>
+        </div>
+        <h3>24/7 Support</h3>
+        <p>Round-the-clock customer support for all your needs</p>
+      </div>
+    </div>
+  </div>
+</div>
+

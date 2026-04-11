@@ -169,6 +169,7 @@ public class KeycloakService {
     public void updateUser(String keycloakUserId, String username, String email) {
         try {
             String adminToken = getAdminAccessToken();
+            System.out.println(adminToken);
             String usersUrl = keycloakAdminUrl + "/admin/realms/" + realm + "/users/" + keycloakUserId;
             
             HttpHeaders headers = new HttpHeaders();

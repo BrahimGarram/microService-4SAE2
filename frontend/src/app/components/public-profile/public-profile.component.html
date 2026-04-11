@@ -1,0 +1,239 @@
+<div class="public-profile-page">
+  <header class="page-header">
+    <h1><i class="fas fa-user"></i> Profil</h1>
+    <p class="page-subtitle" *ngIf="user">{{ user.username }}</p>
+  </header>
+
+  <!-- Loading -->
+  <div *ngIf="loading && !user" class="card card--loading">
+    <div class="spinner"></div>
+    <p>Chargement du profil...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="errorMessage && !loading" class="card card--error">
+    <div class="empty-state">
+      <div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div>
+      <h2>Profil introuvable</h2>
+      <p>{{ errorMessage }}</p>
+      <button type="button" class="btn btn--primary" (click)="routerInstance.navigate(['/'])">
+        <i class="fas fa-arrow-left"></i> Retour à l'accueil
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="user && !loading" class="card card--profile">
+    <!-- En-tête -->
+    <div class="profile-head">
+      <div class="profile-head-left">
+        <div class="avatar" [style.background-image]="user?.profilePicture ? 'url(' + user.profilePicture + ')' : 'none'"
+             [class.avatar--initial]="!user?.profilePicture">
+          <span *ngIf="!user?.profilePicture">{{ (user?.username || '?')[0] | uppercase }}</span>
+        </div>
+        <div class="profile-meta">
+          <h2>
+            {{ user.username }}
+            <span *ngIf="user.verified" class="verified-badge" title="Compte vérifié"><i class="fas fa-check-circle"></i></span>
+          </h2>
+          <span class="email">{{ user.email }}</span>
+          <div class="profile-badges">
+            <span class="role-pill" [class.role-user]="user.role === 'USER'"
+                  [class.role-freelancer]="user.role === 'FREELANCER'"
+                  [class.role-admin]="user.role === 'ADMIN'">{{ user.role }}</span>
+            <span class="availability-pill" [style.color]="getAvailabilityColor(user.availability)"
+                  [title]="getAvailabilityLabel(user.availability)">
+              <i class="fas" [ngClass]="getAvailabilityIcon(user.availability)"></i>
+              {{ getAvailabilityLabel(user.availability) }}
+            </span>
+            <span *ngIf="user.averageRating && user.averageRating > 0" class="rating-pill">
+              <i class="fas fa-star"></i> {{ user.averageRating | number:'1.1-1' }}
+              <span *ngIf="user.ratingCount">({{ user.ratingCount }})</span>
+            </span>
+          </div>
+          <div class="profile-follow-stats">
+            <button type="button" class="follow-stat" (click)="openFollowModal('followers')">
+              <strong>{{ user.followerCount ?? 0 }}</strong> abonnés
+            </button>
+            <span class="follow-stat-sep">·</span>
+            <button type="button" class="follow-stat" (click)="openFollowModal('following')">
+              <strong>{{ user.followingCount ?? 0 }}</strong> abonnements
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="profile-head-actions" *ngIf="currentUser && currentUser.id !== user.id">
+        <button type="button" class="btn-edit" (click)="routerInstance.navigate(['/messages', user.id])">
+          <i class="fas fa-envelope"></i> Envoyer un message
+        </button>
+      </div>
+    </div>
+
+    <!-- Bio -->
+    <div *ngIf="user.bio" class="profile-bio">
+      <h3><i class="fas fa-align-left"></i> À propos</h3>
+      <p>{{ user.bio }}</p>
+    </div>
+
+    <!-- Infos (grille) -->
+    <div class="info-grid">
+      <div class="info-cell" *ngIf="user.city || user.country">
+        <span class="info-label"><i class="fas fa-map-marker-alt"></i> Ville</span>
+        <span class="info-value">{{ user.city }}{{ user.city && user.country ? ', ' : '' }}{{ user.country || '' }}</span>
+      </div>
+      <div class="info-cell" *ngIf="user.timezone">
+        <span class="info-label"><i class="fas fa-clock"></i> Fuseau</span>
+        <span class="info-value">{{ user.timezone }}</span>
+      </div>
+      <div class="info-cell" *ngIf="user.hourlyRate && user.role === 'FREELANCER'">
+        <span class="info-label"><i class="fas fa-dollar-sign"></i> Taux horaire</span>
+        <span class="info-value">{{ user.hourlyRate | number:'1.2-2' }} $/h</span>
+      </div>
+      <div class="info-cell">
+        <span class="info-label"><i class="fas fa-calendar-plus"></i> Inscription</span>
+        <span class="info-value">{{ user.createdAt | date:'d MMM y' }}</span>
+      </div>
+    </div>
+
+    <!-- Compétences -->
+    <section *ngIf="user.skills && user.skills.length > 0" class="profile-section">
+      <h3><i class="fas fa-tools"></i> Compétences</h3>
+      <div class="skills-list">
+        <span class="skill-tag" *ngFor="let skill of user.skills">
+          <span class="skill-name">{{ skill.name }}</span>
+          <span *ngIf="skill.level" class="skill-meta">{{ skill.level }}</span>
+          <span *ngIf="skill.yearsOfExperience" class="skill-meta">{{ skill.yearsOfExperience }} an(s)</span>
+        </span>
+      </div>
+    </section>
+
+    <!-- Portfolio -->
+    <section *ngIf="user.portfolioItems && user.portfolioItems.length > 0" class="profile-section">
+      <h3><i class="fas fa-briefcase"></i> Portfolio</h3>
+      <div class="portfolio-grid">
+        <div class="portfolio-item" *ngFor="let item of user.portfolioItems">
+          <div class="portfolio-image" *ngIf="item.imageUrl" [style.background-image]="'url(' + item.imageUrl + ')'"></div>
+          <div class="portfolio-image portfolio-image--placeholder" *ngIf="!item.imageUrl"><i class="fas fa-image"></i></div>
+          <div class="portfolio-content">
+            <h4>{{ item.title }}</h4>
+            <p *ngIf="item.description">{{ item.description }}</p>
+            <div class="portfolio-tech" *ngIf="item.technologies">
+              <span class="tech-tag" *ngFor="let tech of item.technologies.split(',')">{{ tech.trim() }}</span>
+            </div>
+            <a *ngIf="item.url" [href]="item.url" target="_blank" class="portfolio-link"><i class="fas fa-external-link-alt"></i> Voir le projet</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Langues -->
+    <section *ngIf="user.languages && user.languages.length > 0" class="profile-section">
+      <h3><i class="fas fa-language"></i> Langues</h3>
+      <div class="languages-list">
+        <span class="language-item" *ngFor="let lang of user.languages">
+          <span class="language-name">{{ lang.name }}</span>
+          <span *ngIf="lang.proficiency" class="language-proficiency">{{ lang.proficiency }}</span>
+        </span>
+      </div>
+    </section>
+
+    <!-- Réseaux sociaux -->
+    <section *ngIf="user.socialLinks && user.socialLinks.length > 0" class="profile-section">
+      <h3><i class="fas fa-share-alt"></i> Réseaux sociaux</h3>
+      <div class="social-links-list">
+        <a *ngFor="let link of user.socialLinks" [href]="link.url" target="_blank" class="social-link-item">
+          <i class="fab" [ngClass]="'fa-' + link.platform.toLowerCase()"></i>
+          <span>{{ link.platform }}</span>
+          <i class="fas fa-external-link-alt"></i>
+        </a>
+      </div>
+    </section>
+
+    <!-- Avis et notes -->
+    <section class="profile-section profile-section--ratings">
+      <div class="ratings-head">
+        <h3><i class="fas fa-star"></i> Avis et notes</h3>
+        <span *ngIf="user.averageRating && user.averageRating > 0" class="ratings-summary">
+          {{ user.averageRating | number:'1.1-1' }} <i class="fas fa-star"></i>
+          <span *ngIf="user.ratingCount">({{ user.ratingCount }} avis)</span>
+        </span>
+        <div class="ratings-actions">
+          <button *ngIf="currentUser && currentUser.id !== user.id && !hasRated && !showRatingForm"
+                  type="button" class="btn-sm btn-sm--primary" (click)="showRatingForm = true">
+            <i class="fas fa-star"></i> Noter
+          </button>
+          <button *ngIf="showRatingForm" type="button" class="btn-sm btn-sm--grey" (click)="showRatingForm = false">
+            <i class="fas fa-times"></i> Annuler
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="showRatingForm" class="rating-form">
+        <div class="field">
+          <label>Note (1 à 5 étoiles)</label>
+          <div class="star-rating-input">
+            <span *ngFor="let star of [1,2,3,4,5]" class="star" [class.active]="star <= newRating.rating"
+                  (click)="newRating.rating = star"><i class="fas fa-star"></i></span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Commentaire (optionnel)</label>
+          <textarea [(ngModel)]="newRating.comment" placeholder="Écrivez un avis..." rows="3"></textarea>
+        </div>
+        <button type="button" class="btn btn--primary" (click)="submitRating()">
+          <i class="fas fa-check"></i> Envoyer la note
+        </button>
+      </div>
+
+      <div *ngIf="loadingRatings" class="ratings-loading">
+        <p>Chargement des avis...</p>
+      </div>
+      <div *ngIf="!loadingRatings && ratings.length === 0" class="ratings-empty">
+        <p>Aucun avis pour le moment. Soyez le premier à noter ce profil.</p>
+      </div>
+      <div *ngIf="!loadingRatings && ratings.length > 0" class="ratings-list">
+        <div class="rating-item" *ngFor="let rating of ratings">
+          <div class="rating-item-head">
+            <div>
+              <strong>{{ rating.raterUsername }}</strong>
+              <div class="rating-stars">
+                <span *ngFor="let star of [1,2,3,4,5]" class="star" [class.active]="star <= rating.rating">
+                  <i class="fas fa-star"></i>
+                </span>
+              </div>
+            </div>
+            <div class="rating-item-meta">
+              {{ rating.createdAt | date:'d MMM y' }}
+              <button *ngIf="currentUser && currentUser.id === rating.raterId" type="button" class="btn-icon-delete"
+                      (click)="deleteRating(rating.id!)" title="Supprimer votre avis">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+          </div>
+          <p *ngIf="rating.comment" class="rating-comment">{{ rating.comment }}</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Modal Followers / Following -->
+<div class="modal-overlay" *ngIf="showFollowModal" (click)="closeFollowModal()">
+  <div class="modal-content modal-follow" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ showFollowModal === 'followers' ? 'Abonnés' : 'Abonnements' }}</h2>
+      <button type="button" class="modal-close" (click)="closeFollowModal()" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="loadingFollowList" class="follow-loading"><i class="fas fa-spinner fa-spin"></i> Chargement...</div>
+      <div *ngIf="!loadingFollowList && followList.length === 0" class="follow-empty">Aucun utilisateur.</div>
+      <div *ngIf="!loadingFollowList && followList.length > 0" class="follow-list">
+        <a *ngFor="let u of followList" [routerLink]="['/user', u.id]" class="follow-item" (click)="closeFollowModal()">
+          <div class="follow-avatar" [style.background-image]="u.profilePicture ? 'url(' + u.profilePicture + ')' : 'none'">
+            <span *ngIf="!u.profilePicture">{{ (u.username || '?')[0] | uppercase }}</span>
+          </div>
+          <span class="follow-username">{{ u.username }}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

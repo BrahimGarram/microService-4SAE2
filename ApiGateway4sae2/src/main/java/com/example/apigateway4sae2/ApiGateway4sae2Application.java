@@ -1,5 +1,6 @@
 package com.example.apigateway4sae2;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
@@ -16,23 +17,31 @@ public class ApiGateway4sae2Application {
     public static void main(String[] args) {
         SpringApplication.run(ApiGateway4sae2Application.class, args);
     }
+    /**
+     * URIs par défaut {@code lb://...} (Eureka). En Docker Compose, surcharger via les variables
+     * {@code GATEWAY_USER_SERVICE_URI}, {@code GATEWAY_SERVICE_TEST_URI} pour éviter les 503
+     * si le registre Eureka est vide ou lent.
+     */
     @Bean
-    public RouteLocator gatewayRoutes(RouteLocatorBuilder builder){
+    public RouteLocator gatewayRoutes(
+            RouteLocatorBuilder builder,
+            @Value("${gateway.user-service.uri:lb://USER-SERVICE}") String userServiceUri,
+            @Value("${gateway.service-test.uri:lb://SERVICE-TEST}") String serviceTestUri) {
 
         return builder.routes()
                 /* Service Test: context-path = /service-test (voir application.properties du service-test) */
-                .route("service-test", r -> r.path("/service-test/**").uri("lb://SERVICE-TEST"))
+                .route("service-test", r -> r.path("/service-test/**").uri(serviceTestUri))
                 /* User service: pas de context-path; controllers sous /api/users, /api/posts, /api/messages, /api/follow */
                 .route("user-service", r -> r.path("/user", "/user/**")
                         .filters(f -> f.rewritePath("/user(?<path>.*)", "/api/users${path}"))
-                        .uri("lb://USER-SERVICE"))
-                .route("user-posts", r -> r.path("/api/posts/**").uri("lb://USER-SERVICE"))
-                .route("user-messages", r -> r.path("/api/messages/**").uri("lb://USER-SERVICE"))
-                .route("user-follow", r -> r.path("/api/follow/**").uri("lb://USER-SERVICE"))
-                .route("user-group-chats", r -> r.path("/api/group-chats/**").uri("lb://USER-SERVICE"))
-                .route("user-chat", r -> r.path("/api/chat/**").uri("lb://USER-SERVICE"))
-                .route("user-notifications", r -> r.path("/api/notifications/**").uri("lb://USER-SERVICE"))
-                .route("user-ws", r -> r.path("/ws/**").uri("lb://USER-SERVICE"))
+                        .uri(userServiceUri))
+                .route("user-posts", r -> r.path("/api/posts/**").uri(userServiceUri))
+                .route("user-messages", r -> r.path("/api/messages/**").uri(userServiceUri))
+                .route("user-follow", r -> r.path("/api/follow/**").uri(userServiceUri))
+                .route("user-group-chats", r -> r.path("/api/group-chats/**").uri(userServiceUri))
+                .route("user-chat", r -> r.path("/api/chat/**").uri(userServiceUri))
+                .route("user-notifications", r -> r.path("/api/notifications/**").uri(userServiceUri))
+                .route("user-ws", r -> r.path("/ws/**").uri(userServiceUri))
                 /* Project service: pas de context-path; controllers sous /api/projects */
                 .route("project-service", r -> r.path("/project", "/project/**")
                         .filters(f -> f.rewritePath("/project(?<path>.*)", "/api/projects${path}"))

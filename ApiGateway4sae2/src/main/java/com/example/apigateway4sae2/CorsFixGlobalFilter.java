@@ -12,6 +12,7 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Évite les en-têtes CORS en double : les backends et le gateway en envoient tous les deux.
@@ -22,17 +23,26 @@ import java.util.List;
 @Order(Ordered.LOWEST_PRECEDENCE)
 public class CorsFixGlobalFilter implements WebFilter {
 
-    private static final String ORIGIN = "http://localhost:4200";
+    private static final Set<String> ALLOWED_ORIGINS = Set.of(
+            "http://localhost:4200",
+            "http://127.0.0.1:4200"
+    );
+    private static final String DEFAULT_ORIGIN = "http://localhost:4200";
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        String requestOrigin = exchange.getRequest().getHeaders().getFirst(HttpHeaders.ORIGIN);
+        String allowOrigin = (requestOrigin != null && ALLOWED_ORIGINS.contains(requestOrigin))
+                ? requestOrigin
+                : DEFAULT_ORIGIN;
+
         ServerHttpResponse originalResponse = exchange.getResponse();
         ServerHttpResponseDecorator response = new ServerHttpResponseDecorator(originalResponse) {
             @Override
             public HttpHeaders getHeaders() {
                 HttpHeaders headers = super.getHeaders();
                 removeCorsHeaders(headers);
-                headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ORIGIN);
+                headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigin);
                 headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
                 headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET, POST, PUT, PATCH, DELETE, OPTIONS");
                 headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "*");
