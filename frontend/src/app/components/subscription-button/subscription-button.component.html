@@ -1,0 +1,17 @@
+<button 
+  [ngClass]="getButtonClass()"
+  (click)="navigateToSubscription()"
+  [disabled]="loading">
+  
+  <span class="btn-content">
+    <i *ngIf="showIcon" class="bi" [ngClass]="getIcon()"></i>
+    <span class="btn-text">{{ getButtonText() }}</span>
+    <span class="btn-shine"></span>
+  </span>
+  
+  <!-- Badge for current plan -->
+  <span *ngIf="currentSubscription && currentSubscription.plan.planName !== 'FREE'" 
+        class="plan-badge">
+    {{ currentSubscription.plan.planName }}
+  </span>
+</button>

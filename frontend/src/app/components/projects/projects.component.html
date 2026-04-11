@@ -1,0 +1,911 @@
+<div class="page-content">
+  <div class="page-header">
+    <div>
+      <h1>All Projects</h1>
+      <p>Browse and manage all platform projects</p>
+    </div>
+    <button class="btn-primary" (click)="addProject()">
+      <i class="fas fa-plus"></i> New Project
+    </button>
+  </div>
+
+  <div class="filters-bar">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="Search projects..." [(ngModel)]="searchTerm" (input)="applyFilters()">
+    </div>
+    <select class="filter-select" [(ngModel)]="selectedStatus" (change)="applyFilters()">
+      <option value="ALL">All Status</option>
+      <option value="DRAFT">Draft</option>
+      <option value="OPEN">Open</option>
+      <option value="IN_PROGRESS">In Progress</option>
+      <option value="COMPLETED">Completed</option>
+      <option value="CANCELLED">Cancelled</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="selectedCategory" (change)="applyFilters()">
+      <option value="ALL">All Categories</option>
+      <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="sortBy" (change)="applyFilters()">
+      <option value="newest">Sort by: Newest</option>
+      <option value="budget">Sort by: Budget</option>
+      <option value="status">Sort by: Status</option>
+    </select>
+    <button class="btn-primary filters-btn" (click)="addProject()">
+      <i class="fas fa-plus"></i> New Project
+    </button>
+  </div>
+
+  <!-- Statistics Dashboard (Admin Only) -->
+  <div class="statistics-dashboard" *ngIf="!isLoading && projects.length > 0 && isAdmin">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+        <i class="fas fa-briefcase"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ statistics.total }}</h3>
+        <p>Total Projects</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #48bb78, #38a169);">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ statistics.completionRate.toFixed(1) }}%</h3>
+        <p>Completion Rate</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #FF6B35, #FF5722);">
+        <i class="fas fa-dollar-sign"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ formatCurrency(statistics.totalBudget) }}</h3>
+        <p>Total Budget</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #4299e1, #3182ce);">
+        <i class="fas fa-chart-pie"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ getStatusTypesCount() }}</h3>
+        <p>Status Types</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advanced Filters & View Mode Toggle -->
+  <div class="advanced-controls">
+    <div class="view-mode-toggle">
+      <button class="view-btn" [class.active]="viewMode === 'grid'" (click)="setViewMode('grid')">
+        <i class="fas fa-th"></i> Grid
+      </button>
+      <button class="view-btn" [class.active]="viewMode === 'kanban'" (click)="setViewMode('kanban')">
+        <i class="fas fa-columns"></i> Kanban
+      </button>
+    </div>
+    <div class="advanced-filters-toggle" *ngIf="isAdmin">
+      <button class="btn-secondary" (click)="showAdvancedFilters = !showAdvancedFilters">
+        <i class="fas fa-filter"></i> Advanced Filters
+      </button>
+      <button class="btn-secondary" *ngIf="selectedProjects.size > 0" (click)="selectedProjects.clear(); selectAllMode = false">
+        <i class="fas fa-times"></i> Clear Selection ({{ selectedProjects.size }})
+      </button>
+    </div>
+  </div>
+
+  <!-- Advanced Filters Panel (Admin Only) -->
+  <div class="advanced-filters-panel" *ngIf="showAdvancedFilters && isAdmin">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Budget Range</label>
+        <div class="budget-range">
+          <input type="number" placeholder="Min" [(ngModel)]="budgetMin" (input)="applyFilters()">
+          <span>to</span>
+          <input type="number" placeholder="Max" [(ngModel)]="budgetMax" (input)="applyFilters()">
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Date Range</label>
+        <div class="date-range">
+          <input type="date" [(ngModel)]="dateFrom" (change)="applyFilters()">
+          <span>to</span>
+          <input type="date" [(ngModel)]="dateTo" (change)="applyFilters()">
+        </div>
+      </div>
+      <div class="filter-actions">
+        <button class="btn-secondary" (click)="clearAdvancedFilters()">
+          <i class="fas fa-times"></i> Clear
+        </button>
+        <button class="btn-secondary" (click)="saveFilterPreset()">
+          <i class="fas fa-save"></i> Save Preset
+        </button>
+      </div>
+    </div>
+    <div class="saved-presets" *ngIf="savedFilterPresets.length > 0">
+      <label>Saved Presets:</label>
+      <div class="preset-buttons">
+        <button *ngFor="let preset of savedFilterPresets" class="preset-btn" (click)="loadFilterPreset(preset)">
+          {{ preset.name }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Operations Bar (Admin Only) -->
+  <div class="bulk-operations-bar" *ngIf="selectedProjects.size > 0 && isAdmin">
+    <div class="bulk-info">
+      <i class="fas fa-check-square"></i>
+      <span>{{ selectedProjects.size }} project(s) selected</span>
+    </div>
+    <div class="bulk-actions">
+      <select class="bulk-select" (change)="onBulkStatusChange($event)" #statusSelect>
+        <option value="">Change Status...</option>
+        <option value="DRAFT">Draft</option>
+        <option value="OPEN">Open</option>
+        <option value="IN_PROGRESS">In Progress</option>
+        <option value="COMPLETED">Completed</option>
+        <option value="CANCELLED">Cancelled</option>
+      </select>
+      <button class="btn-secondary" (click)="exportToCSV()">
+        <i class="fas fa-download"></i> Export CSV
+      </button>
+      <button class="btn-danger" (click)="bulkDelete()">
+        <i class="fas fa-trash"></i> Delete
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-message">
+    <i class="fas fa-spinner fa-spin"></i> Loading projects...
+  </div>
+
+  <!-- Grid View -->
+  <div class="grid-view-header" *ngIf="!isLoading && viewMode === 'grid' && filteredProjects.length > 0 && isAdmin">
+    <div class="select-all-control">
+      <input type="checkbox" [checked]="selectAllMode" (change)="toggleSelectAll()" id="selectAll">
+      <label for="selectAll">Select All ({{ filteredProjects.length }})</label>
+    </div>
+  </div>
+  <div class="projects-grid" *ngIf="!isLoading && viewMode === 'grid'">
+    <div class="project-card" *ngFor="let project of filteredProjects" (click)="viewProjectDetails(project)" style="cursor: pointer; position: relative;">
+      <div class="project-card-content">
+        <!-- Bulk Selection Checkbox (Admin Only) -->
+        <div class="bulk-checkbox" *ngIf="isAdmin" (click)="$event.stopPropagation(); toggleProjectSelection(project.id)">
+          <input type="checkbox" [checked]="isProjectSelected(project.id)" (change)="toggleProjectSelection(project.id)" (click)="$event.stopPropagation()">
+        </div>
+        <!-- Project Image -->
+        <div class="project-image-container">
+          <img [src]="getProjectImage(project)" [alt]="project.title" class="project-image" (error)="onImageError($event)">
+          <div class="project-overlay">
+            <span class="status-badge-overlay" [class]="getStatusClass(project.status)">
+              {{ getStatusDisplay(project.status) }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="project-header">
+          <div class="project-title-wrapper">
+            <i class="fas fa-briefcase project-icon"></i>
+            <h3>{{ project.title }}</h3>
+          </div>
+          <span class="category-badge" *ngIf="project.category">
+            <i class="fas fa-tag"></i> {{ project.category }}
+          </span>
+        </div>
+      <div class="project-body">
+        <div class="project-meta">
+          <span class="meta-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span class="meta-label">Created:</span>
+            <span class="meta-value">{{ formatDate(project.createdAt) }}</span>
+          </span>
+          <span class="meta-item" *ngIf="project.deadline">
+            <i class="fas fa-clock"></i>
+            <span class="meta-label">Deadline:</span>
+            <span class="meta-value">{{ formatDateTime(project.deadline) }}</span>
+          </span>
+          <span class="meta-item" *ngIf="project.budget">
+            <i class="fas fa-dollar-sign"></i>
+            <span class="meta-label">Budget:</span>
+            <span class="meta-value">{{ formatCurrency(project.budget) }}</span>
+          </span>
+        </div>
+        <div class="project-description-wrapper">
+          <p class="project-description">{{ project.description || 'No description provided' }}</p>
+        </div>
+        <div class="project-tags" *ngIf="project.tags">
+          <i class="fas fa-tags"></i>
+          <span *ngFor="let tag of project.tags.split(',')" class="tag-item">{{ tag.trim() }}</span>
+        </div>
+      </div>
+      <div class="project-actions">
+        <button class="btn-icon" title="View project details" (click)="viewProjectDetails(project)">
+          <i class="fas fa-eye"></i>
+        </button>
+        <button class="btn-icon" title="Edit project" (click)="editProjectClick(project)" *ngIf="canEditProject(project)">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn-icon btn-danger" title="Delete project" (click)="deleteProject(project.id!, project.title)">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>
+      </div>
+    </div>
+    
+    <div *ngIf="filteredProjects.length === 0 && !isLoading" class="empty-state">
+      <i class="fas fa-folder-open"></i>
+      <p>No projects found</p>
+      <p class="empty-state-hint" *ngIf="!isAdmin">Click "New Project" to get started!</p>
+      <button class="btn-primary empty-state-btn" (click)="addProject()" *ngIf="!isAdmin">
+        <i class="fas fa-plus"></i> New Project
+      </button>
+    </div>
+  </div>
+
+  <!-- Add Project Modal -->
+  <div class="modal-overlay" *ngIf="showAddModal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-plus-circle"></i> Create New Project</h2>
+        <button class="modal-close" (click)="closeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #projectForm="ngForm" (ngSubmit)="saveProject()">
+        <div class="form-group">
+          <label>Project Title *</label>
+          <input type="text" 
+                 placeholder="Enter project title" 
+                 [(ngModel)]="newProject.title" 
+                 name="title" 
+                 required
+                 minlength="3"
+                 maxlength="200"
+                 #titleInput="ngModel"
+                 [class.error]="titleInput.invalid && titleInput.touched">
+          <div class="error-message" *ngIf="titleInput.invalid && titleInput.touched">
+            <span *ngIf="titleInput.errors?.['required']">⚠ Title is required</span>
+            <span *ngIf="titleInput.errors?.['minlength']">⚠ Title must be at least 3 characters (currently {{ newProject.title?.length || 0 }})</span>
+            <span *ngIf="titleInput.errors?.['maxlength']">⚠ Title cannot exceed 200 characters (currently {{ newProject.title?.length || 0 }})</span>
+          </div>
+          <div class="error-message" *ngIf="newProject.title && newProject.title.trim().length > 0 && newProject.title.trim().length < 3 && !titleInput.errors?.['required']">
+            <span>⚠ Title must be at least 3 characters (currently {{ newProject.title.trim().length }})</span>
+          </div>
+          <div class="error-message" *ngIf="newProject.title && newProject.title.length > 200">
+            <span>⚠ Title cannot exceed 200 characters (currently {{ newProject.title.length }})</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea rows="4" 
+                    placeholder="Enter project description" 
+                    [(ngModel)]="newProject.description" 
+                    name="description"
+                    maxlength="5000"
+                    #descriptionInput="ngModel"
+                    [class.error]="descriptionInput.invalid && descriptionInput.touched"></textarea>
+          <div class="error-message" *ngIf="newProject.description && newProject.description.length > 5000">
+            <span>⚠ Description cannot exceed 5000 characters (currently {{ newProject.description.length }})</span>
+          </div>
+          <small class="char-count" [class.char-count-error]="newProject.description && newProject.description.length > 5000">
+            {{ (newProject.description?.length || 0) }}/5000
+          </small>
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <select class="setting-select" 
+                  [(ngModel)]="newProject.category" 
+                  name="category"
+                  required
+                  #categoryInput="ngModel"
+                  [class.error]="categoryInput.invalid && categoryInput.touched">
+            <option value="">Select a category</option>
+            <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+          </select>
+          <div class="error-message" *ngIf="categoryInput.invalid && categoryInput.touched">
+            <span>⚠ Category is required</span>
+          </div>
+          <div class="error-message" *ngIf="!newProject.category || newProject.category === ''">
+            <span>⚠ Please select a category</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Cover Image URL <span class="optional-badge">(Optional)</span></label>
+          <input type="url" 
+                 placeholder="https://example.com/image.jpg" 
+                 [(ngModel)]="newProject.imageUrl" 
+                 name="imageUrl"
+                 maxlength="500"
+                 #imageUrlInput="ngModel"
+                 [class.error]="imageUrlInput.invalid && imageUrlInput.touched">
+          <div class="error-message" *ngIf="newProject.imageUrl && newProject.imageUrl.trim() && (!isValidUrl(newProject.imageUrl) || newProject.imageUrl.length > 500)">
+            <span *ngIf="!isValidUrl(newProject.imageUrl)">⚠ Please enter a valid URL (e.g., https://example.com/image.jpg)</span>
+            <span *ngIf="newProject.imageUrl.length > 500">⚠ URL cannot exceed 500 characters (currently {{ newProject.imageUrl.length }})</span>
+          </div>
+          <small class="form-hint">
+            <i class="fas fa-info-circle"></i> 
+            <strong>How images work:</strong> If you provide an image URL, it will be used. Otherwise, a default image will be automatically selected based on your chosen category. You can leave this empty.
+          </small>
+        </div>
+        <div class="form-group">
+          <label>Tags</label>
+          <input type="text" 
+                 placeholder="Enter tags (comma-separated)" 
+                 [(ngModel)]="newProject.tags" 
+                 name="tags"
+                 maxlength="500"
+                 #tagsInput="ngModel"
+                 [class.error]="tagsInput.invalid && tagsInput.touched">
+          <div class="error-message" *ngIf="newProject.tags && newProject.tags.length > 500">
+            <span>⚠ Tags cannot exceed 500 characters (currently {{ newProject.tags.length }})</span>
+          </div>
+          <small class="form-hint">e.g., react, nodejs, design</small>
+          <small class="char-count" [class.char-count-error]="newProject.tags && newProject.tags.length > 500">
+            {{ (newProject.tags?.length || 0) }}/500
+          </small>
+        </div>
+        <div class="form-group">
+          <label>Budget *</label>
+          <input type="number" 
+                 placeholder="Enter budget amount" 
+                 [(ngModel)]="newProject.budget" 
+                 name="budget" 
+                 required
+                 step="0.01" 
+                 min="0"
+                 #budgetInput="ngModel"
+                 [class.error]="budgetInput.invalid && budgetInput.touched">
+          <div class="error-message" *ngIf="budgetInput.invalid && budgetInput.touched">
+            <span *ngIf="budgetInput.errors?.['required']">⚠ Budget is required</span>
+            <span *ngIf="budgetInput.errors?.['min']">⚠ Budget must be positive or zero</span>
+          </div>
+          <div class="error-message" *ngIf="newProject.budget === undefined || newProject.budget === null">
+            <span>⚠ Budget is required</span>
+          </div>
+          <div class="error-message" *ngIf="newProject.budget !== undefined && newProject.budget !== null && newProject.budget < 0">
+            <span>⚠ Budget must be positive or zero (currently {{ newProject.budget }})</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Status *</label>
+          <select class="setting-select" 
+                  [(ngModel)]="newProject.status" 
+                  name="status"
+                  required
+                  #statusInput="ngModel"
+                  [class.error]="statusInput.invalid && statusInput.touched">
+            <option value="DRAFT">Draft</option>
+            <option value="OPEN">Open</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+          <div class="error-message" *ngIf="statusInput.invalid && statusInput.touched">
+            <span *ngIf="statusInput.errors?.['required']">⚠ Status is required</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Deadline *</label>
+          <input type="datetime-local" 
+                 [(ngModel)]="newProject.deadline" 
+                 name="deadline"
+                 required
+                 #deadlineInput="ngModel"
+                 [class.error]="deadlineInput.invalid && deadlineInput.touched">
+          <div class="error-message" *ngIf="deadlineInput.invalid && deadlineInput.touched">
+            <span *ngIf="deadlineInput.errors?.['required']">⚠ Deadline is required</span>
+          </div>
+          <div class="error-message" *ngIf="!newProject.deadline">
+            <span>⚠ Deadline is required</span>
+          </div>
+        </div>
+        </form>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="button" class="btn-primary" [disabled]="!isFormValid()" (click)="saveProject()">
+          <i class="fas fa-check"></i> Create Project
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Project Modal -->
+  <div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-edit"></i> Edit Project</h2>
+        <button class="modal-close" (click)="closeEditModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #editProjectForm="ngForm" (ngSubmit)="updateProject()">
+        <div class="form-group">
+          <label>Project Title *</label>
+          <input type="text" 
+                 placeholder="Enter project title" 
+                 [(ngModel)]="editProject.title" 
+                 name="editTitle" 
+                 required
+                 minlength="3"
+                 maxlength="200"
+                 #editTitleInput="ngModel"
+                 [class.error]="editTitleInput.invalid && editTitleInput.touched">
+          <div class="error-message" *ngIf="editTitleInput.invalid && editTitleInput.touched">
+            <span *ngIf="editTitleInput.errors?.['required']">Title is required</span>
+            <span *ngIf="editTitleInput.errors?.['minlength']">Title must be at least 3 characters</span>
+            <span *ngIf="editTitleInput.errors?.['maxlength']">Title cannot exceed 200 characters</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea rows="4" 
+                    placeholder="Enter project description" 
+                    [(ngModel)]="editProject.description" 
+                    name="editDescription"
+                    maxlength="5000"
+                    #editDescriptionInput="ngModel"
+                    [class.error]="editDescriptionInput.invalid && editDescriptionInput.touched"></textarea>
+          <div class="error-message" *ngIf="editDescriptionInput.invalid && editDescriptionInput.touched">
+            <span *ngIf="editDescriptionInput.errors?.['maxlength']">Description cannot exceed 5000 characters</span>
+          </div>
+          <small class="char-count">{{ (editProject.description?.length || 0) }}/5000</small>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select class="setting-select" [(ngModel)]="editProject.category" name="editCategory">
+            <option value="">Select a category</option>
+            <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cover Image URL <span class="optional-badge">(Optional)</span></label>
+          <input type="url" 
+                 placeholder="https://example.com/image.jpg" 
+                 [(ngModel)]="editProject.imageUrl" 
+                 name="editImageUrl"
+                 maxlength="500"
+                 #editImageUrlInput="ngModel"
+                 [class.error]="editImageUrlInput.invalid && editImageUrlInput.touched">
+          <div class="error-message" *ngIf="editImageUrlInput.invalid && editImageUrlInput.touched">
+            <span *ngIf="editImageUrlInput.errors?.['url']">Please enter a valid URL</span>
+            <span *ngIf="editImageUrlInput.errors?.['maxlength']">URL cannot exceed 500 characters</span>
+          </div>
+          <small class="form-hint">
+            <i class="fas fa-info-circle"></i> 
+            <strong>How images work:</strong> If you provide an image URL, it will be used. Otherwise, a default image will be automatically selected based on your chosen category. You can leave this empty.
+          </small>
+        </div>
+        <div class="form-group">
+          <label>Tags</label>
+          <input type="text" 
+                 placeholder="Enter tags (comma-separated)" 
+                 [(ngModel)]="editProject.tags" 
+                 name="editTags"
+                 maxlength="500"
+                 #editTagsInput="ngModel"
+                 [class.error]="editTagsInput.invalid && editTagsInput.touched">
+          <div class="error-message" *ngIf="editTagsInput.invalid && editTagsInput.touched">
+            <span *ngIf="editTagsInput.errors?.['maxlength']">Tags cannot exceed 500 characters</span>
+          </div>
+          <small class="form-hint">e.g., react, nodejs, design</small>
+          <small class="char-count">{{ (editProject.tags?.length || 0) }}/500</small>
+        </div>
+        <div class="form-group">
+          <label>Budget *</label>
+          <input type="number" 
+                 placeholder="Enter budget amount" 
+                 [(ngModel)]="editProject.budget" 
+                 name="editBudget" 
+                 required
+                 step="0.01" 
+                 min="0"
+                 #editBudgetInput="ngModel"
+                 [class.error]="editBudgetInput.invalid && editBudgetInput.touched">
+          <div class="error-message" *ngIf="editBudgetInput.invalid && editBudgetInput.touched">
+            <span *ngIf="editBudgetInput.errors?.['required']">⚠ Budget is required</span>
+            <span *ngIf="editBudgetInput.errors?.['min']">⚠ Budget must be positive or zero</span>
+          </div>
+          <div class="error-message" *ngIf="editProject.budget === undefined || editProject.budget === null">
+            <span>⚠ Budget is required</span>
+          </div>
+          <div class="error-message" *ngIf="editProject.budget !== undefined && editProject.budget !== null && editProject.budget < 0">
+            <span>⚠ Budget must be positive or zero (currently {{ editProject.budget }})</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Status *</label>
+          <select class="setting-select" 
+                  [(ngModel)]="editProject.status" 
+                  name="editStatus"
+                  required
+                  #editStatusInput="ngModel"
+                  [class.error]="editStatusInput.invalid && editStatusInput.touched">
+            <option value="DRAFT">Draft</option>
+            <option value="OPEN">Open</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+          <div class="error-message" *ngIf="editStatusInput.invalid && editStatusInput.touched">
+            <span *ngIf="editStatusInput.errors?.['required']">⚠ Status is required</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Deadline *</label>
+          <input type="datetime-local" 
+                 [(ngModel)]="editProject.deadline" 
+                 name="editDeadline"
+                 required
+                 #editDeadlineInput="ngModel"
+                 [class.error]="editDeadlineInput.invalid && editDeadlineInput.touched">
+          <div class="error-message" *ngIf="editDeadlineInput.invalid && editDeadlineInput.touched">
+            <span *ngIf="editDeadlineInput.errors?.['required']">⚠ Deadline is required</span>
+          </div>
+          <div class="error-message" *ngIf="!editProject.deadline">
+            <span>⚠ Deadline is required</span>
+          </div>
+        </div>
+        </form>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeEditModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="!isEditFormValid()" (click)="updateProject()">
+          <i class="fas fa-save"></i> Update Project
+        </button>
+        <div class="form-validation-hint" *ngIf="!isEditFormValid()">
+          <i class="fas fa-exclamation-triangle"></i> 
+          <span *ngIf="!editProject.title?.trim()">Title is required</span>
+          <span *ngIf="editProject.title && editProject.title.trim().length < 3">Title must be at least 3 characters</span>
+          <span *ngIf="editProject.title && editProject.title.trim().length >= 3 && !isEditFormValid()">Please check all fields</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project Details Modal -->
+  <div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal()">
+    <div class="modal-content details-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-info-circle"></i> Project Details</h2>
+        <button class="modal-close" (click)="closeDetailsModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedProject">
+        <!-- Project Image -->
+        <div class="details-image" *ngIf="getProjectImage(selectedProject)">
+          <img [src]="getProjectImage(selectedProject)" [alt]="selectedProject.title" (error)="onImageError($event)">
+        </div>
+        
+        <!-- Project Info -->
+        <div class="details-section">
+          <h3>{{ selectedProject.title }}</h3>
+          <div class="details-badges">
+            <span class="status-badge" [class]="getStatusClass(selectedProject.status)">
+              {{ getStatusDisplay(selectedProject.status) }}
+            </span>
+            <span class="category-badge" *ngIf="selectedProject.category">
+              <i class="fas fa-tag"></i> {{ selectedProject.category }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="details-section" *ngIf="selectedProject.description">
+          <h4><i class="fas fa-align-left"></i> Description</h4>
+          <p>{{ selectedProject.description }}</p>
+        </div>
+
+        <!-- Project Metadata -->
+        <div class="details-grid">
+          <div class="detail-item" *ngIf="selectedProject.budget">
+            <i class="fas fa-dollar-sign"></i>
+            <div>
+              <label>Budget</label>
+              <span>{{ formatCurrency(selectedProject.budget) }}</span>
+            </div>
+          </div>
+          <div class="detail-item" *ngIf="selectedProject.deadline">
+            <i class="fas fa-clock"></i>
+            <div>
+              <label>Deadline</label>
+              <span>{{ formatDateTime(selectedProject.deadline) }}</span>
+            </div>
+          </div>
+          <div class="detail-item" *ngIf="selectedProject.createdAt">
+            <i class="fas fa-calendar"></i>
+            <div>
+              <label>Created</label>
+              <span>{{ formatDate(selectedProject.createdAt) }}</span>
+            </div>
+          </div>
+          <div class="detail-item" *ngIf="selectedProject.updatedAt">
+            <i class="fas fa-edit"></i>
+            <div>
+              <label>Last Updated</label>
+              <span>{{ formatDate(selectedProject.updatedAt) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="details-section" *ngIf="selectedProject.tags">
+          <h4><i class="fas fa-tags"></i> Tags</h4>
+          <div class="project-tags">
+            <span *ngFor="let tag of selectedProject.tags.split(',')" class="tag-item">{{ tag.trim() }}</span>
+          </div>
+        </div>
+
+        <!-- Owner Info -->
+        <div class="details-section">
+          <h4><i class="fas fa-user"></i> Project Owner</h4>
+          <div class="owner-info" *ngIf="loadingOwner">
+            <i class="fas fa-spinner fa-spin"></i> Loading...
+          </div>
+          <div class="owner-info" *ngIf="!loadingOwner && projectOwner">
+            <img [src]="projectOwner.profilePicture || 'https://via.placeholder.com/50'" [alt]="projectOwner.username" class="owner-avatar">
+            <div>
+              <strong>{{ projectOwner.username }}</strong>
+              <span *ngIf="projectOwner.email">{{ projectOwner.email }}</span>
+            </div>
+          </div>
+          <div class="owner-info" *ngIf="!loadingOwner && !projectOwner">
+            <i class="fas fa-user-slash"></i> Owner information not available
+          </div>
+        </div>
+
+        <!-- Tasks Section -->
+        <div class="details-section tasks-section">
+          <div class="tasks-header">
+            <h4><i class="fas fa-tasks"></i> Tasks</h4>
+            <button class="btn-primary btn-sm" (click)="openTaskModal()" *ngIf="canManageTasks()">
+              <i class="fas fa-plus"></i> New Task
+            </button>
+          </div>
+          
+          <div class="tasks-loading" *ngIf="loadingTasks">
+            <i class="fas fa-spinner fa-spin"></i> Loading tasks...
+          </div>
+          
+          <!-- Tasks Kanban View -->
+          <div class="tasks-kanban" *ngIf="!loadingTasks">
+            <!-- To Do Column -->
+            <div class="task-column">
+              <div class="task-column-header">
+                <h5>To Do ({{ tasksByStatus['TO_DO'].length }})</h5>
+              </div>
+              <div class="task-list" 
+                   (dragover)="$event.preventDefault()" 
+                   (drop)="updateTaskStatus($event, TaskStatus.TO_DO)">
+                <div class="task-item" 
+                     *ngFor="let task of tasksByStatus['TO_DO']"
+                     draggable="true"
+                      (dragstart)="onTaskDragStart($event, task)"
+                     (click)="openTaskModal(task)">
+                  <div class="task-header">
+                    <h6>{{ task.title }}</h6>
+                    <div class="task-actions">
+                      <button class="btn-icon-sm" (click)="openTaskModal(task); $event.stopPropagation()" *ngIf="canManageTasks()">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn-icon-sm btn-danger" (click)="deleteTask(task.id!, task.title); $event.stopPropagation()" *ngIf="canManageTasks()">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <p class="task-description" *ngIf="task.description">{{ task.description }}</p>
+                  <div class="task-meta">
+                    <span class="task-priority" [class]="getPriorityColorClass(task.priority)">
+                      <i class="fas fa-flag"></i> {{ getPriorityDisplay(task.priority) }}
+                    </span>
+                    <span class="task-assigned" *ngIf="task.assignedToName">
+                      <i class="fas fa-user"></i> {{ task.assignedToName }}
+                    </span>
+                    <span class="task-due" *ngIf="task.dueDate">
+                      <i class="fas fa-calendar"></i> {{ formatDate(task.dueDate) }}
+                    </span>
+                  </div>
+                </div>
+                <div class="task-empty" *ngIf="tasksByStatus['TO_DO'].length === 0">
+                  No tasks
+                </div>
+              </div>
+            </div>
+            
+            <!-- In Progress Column -->
+            <div class="task-column">
+              <div class="task-column-header">
+                <h5>In Progress ({{ tasksByStatus['IN_PROGRESS'].length }})</h5>
+              </div>
+              <div class="task-list" 
+                   (dragover)="$event.preventDefault()" 
+                   (drop)="updateTaskStatus($event, TaskStatus.IN_PROGRESS)">
+                <div class="task-item" 
+                     *ngFor="let task of tasksByStatus['IN_PROGRESS']"
+                     draggable="true"
+                      (dragstart)="onTaskDragStart($event, task)"
+                     (click)="openTaskModal(task)">
+                  <div class="task-header">
+                    <h6>{{ task.title }}</h6>
+                    <div class="task-actions">
+                      <button class="btn-icon-sm" (click)="openTaskModal(task); $event.stopPropagation()" *ngIf="canManageTasks()">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn-icon-sm btn-danger" (click)="deleteTask(task.id!, task.title); $event.stopPropagation()" *ngIf="canManageTasks()">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <p class="task-description" *ngIf="task.description">{{ task.description }}</p>
+                  <div class="task-meta">
+                    <span class="task-priority" [class]="getPriorityColorClass(task.priority)">
+                      <i class="fas fa-flag"></i> {{ getPriorityDisplay(task.priority) }}
+                    </span>
+                    <span class="task-assigned" *ngIf="task.assignedToName">
+                      <i class="fas fa-user"></i> {{ task.assignedToName }}
+                    </span>
+                    <span class="task-due" *ngIf="task.dueDate">
+                      <i class="fas fa-calendar"></i> {{ formatDate(task.dueDate) }}
+                    </span>
+                  </div>
+                </div>
+                <div class="task-empty" *ngIf="tasksByStatus['IN_PROGRESS'].length === 0">
+                  No tasks
+                </div>
+              </div>
+            </div>
+            
+            <!-- Done Column -->
+            <div class="task-column">
+              <div class="task-column-header">
+                <h5>Done ({{ tasksByStatus['DONE'].length }})</h5>
+              </div>
+              <div class="task-list" 
+                   (dragover)="$event.preventDefault()" 
+                   (drop)="updateTaskStatus($event, TaskStatus.DONE)">
+                <div class="task-item task-done" 
+                     *ngFor="let task of tasksByStatus['DONE']"
+                     draggable="true"
+                      (dragstart)="onTaskDragStart($event, task)"
+                     (click)="openTaskModal(task)">
+                  <div class="task-header">
+                    <h6>{{ task.title }}</h6>
+                    <div class="task-actions">
+                      <button class="btn-icon-sm" (click)="openTaskModal(task); $event.stopPropagation()" *ngIf="canManageTasks()">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn-icon-sm btn-danger" (click)="deleteTask(task.id!, task.title); $event.stopPropagation()" *ngIf="canManageTasks()">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <p class="task-description" *ngIf="task.description">{{ task.description }}</p>
+                  <div class="task-meta">
+                    <span class="task-priority" [class]="getPriorityColorClass(task.priority)">
+                      <i class="fas fa-flag"></i> {{ getPriorityDisplay(task.priority) }}
+                    </span>
+                    <span class="task-assigned" *ngIf="task.assignedToName">
+                      <i class="fas fa-user"></i> {{ task.assignedToName }}
+                    </span>
+                    <span class="task-completed" *ngIf="task.completedAt">
+                      <i class="fas fa-check-circle"></i> {{ formatDate(task.completedAt) }}
+                    </span>
+                  </div>
+                </div>
+                <div class="task-empty" *ngIf="tasksByStatus['DONE'].length === 0">
+                  No tasks
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="details-actions">
+          <button class="btn-secondary" (click)="editProjectClick(selectedProject)" *ngIf="canEditProject(selectedProject)">
+            <i class="fas fa-edit"></i> Edit Project
+          </button>
+          <button class="btn-danger" (click)="deleteProject(selectedProject.id!, selectedProject.title); closeDetailsModal()" *ngIf="canDeleteProject(selectedProject)">
+            <i class="fas fa-trash"></i> Delete Project
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Task Modal -->
+  <div class="modal-overlay" *ngIf="showTaskModal" (click)="closeTaskModal()">
+    <div class="modal-content task-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-tasks"></i> {{ editingTask ? 'Edit Task' : 'Create New Task' }}
+        </h2>
+        <button class="modal-close" (click)="closeTaskModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #taskForm="ngForm">
+          <div class="form-group">
+            <label>Task Title *</label>
+            <input type="text" 
+                   placeholder="Enter task title" 
+                   [(ngModel)]="newTask.title" 
+                   name="taskTitle" 
+                   required
+                   minlength="3"
+                   maxlength="200"
+                   #titleInput="ngModel">
+            <div class="error-message" *ngIf="titleInput.invalid && titleInput.touched">
+              <span *ngIf="titleInput.errors?.['required']">⚠ Title is required</span>
+              <span *ngIf="titleInput.errors?.['minlength']">⚠ Title must be at least 3 characters</span>
+              <span *ngIf="titleInput.errors?.['maxlength']">⚠ Title cannot exceed 200 characters</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Description</label>
+            <textarea rows="4" 
+                      placeholder="Enter task description" 
+                      [(ngModel)]="newTask.description" 
+                      name="taskDescription"
+                      maxlength="2000"
+                      #descriptionInput="ngModel"></textarea>
+            <small class="char-count">{{ (newTask.description?.length || 0) }}/2000</small>
+          </div>
+          
+          <div class="form-group">
+            <label>Assign To</label>
+            <select class="setting-select" [(ngModel)]="newTask.assignedTo" name="assignedTo">
+              <option [ngValue]="undefined">Unassigned</option>
+              <option *ngFor="let freelancer of availableFreelancers" [ngValue]="freelancer.id">
+                {{ freelancer.username }} ({{ freelancer.email }})
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Priority</label>
+            <select class="setting-select" [(ngModel)]="newTask.priority" name="priority">
+              <option [value]="0">Low</option>
+              <option [value]="1">Medium</option>
+              <option [value]="2">High</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Due Date</label>
+            <input type="datetime-local" [(ngModel)]="newTask.dueDate" name="dueDate">
+          </div>
+          
+          <div class="form-group" *ngIf="editingTask">
+            <label>Status</label>
+            <select class="setting-select" [(ngModel)]="editingTask.status" name="status">
+              <option [value]="'TO_DO'">To Do</option>
+              <option [value]="'IN_PROGRESS'">In Progress</option>
+              <option [value]="'DONE'">Done</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeTaskModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="button" class="btn-primary" (click)="saveTask()" [disabled]="!newTask.title || newTask.title.trim().length < 3">
+          <i class="fas fa-check"></i> {{ editingTask ? 'Update Task' : 'Create Task' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

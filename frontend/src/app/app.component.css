@@ -1,0 +1,45 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Admin Layout */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f7fafc;
+}
+
+.admin-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 260px; /* Sidebar width */
+  transition: margin-left 0.3s ease;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.dark-mode .admin-layout {
+  background: #0f1419;
+}
+
+.dark-mode .main-content {
+  background: #0f1419;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-content {
+    margin-left: 0;
+  }
+  
+  .main-content {
+    padding: 1rem;
+  }
+}

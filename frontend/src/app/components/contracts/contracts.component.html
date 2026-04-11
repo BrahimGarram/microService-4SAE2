@@ -1,0 +1,376 @@
+<div class="page-content">
+      <div class="page-header">
+        <div class="header-left">
+          <h1>Freelance Contracts Management</h1>
+          <p>Manage all freelance contracts in the system</p>
+        </div>
+        <button class="btn-primary" (click)="openCreateModal()">
+          <i class="fas fa-plus"></i> New Contract
+        </button>
+      </div>
+
+      <div class="filters-section">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input 
+            type="text" 
+            placeholder="Search by title, freelancer, client..." 
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="onSearchChange()">
+        </div>
+        <div class="filter-group">
+          <label>Status:</label>
+          <select [(ngModel)]="filterStatus" (ngModelChange)="onStatusFilterChange()">
+            <option value="ALL">All Statuses</option>
+            <option *ngFor="let status of contractStatuses" [value]="status">{{ status }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="contracts-table" *ngIf="!loading">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Contract Title</th>
+              <th>Freelancer</th>
+              <th>Client</th>
+              <th>Amount</th>
+              <th>Payment Type</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let contract of filteredContracts">
+              <td>{{ contract.idContract }}</td>
+              <td><strong>{{ contract.contractTitle }}</strong></td>
+              <td>
+                <div>{{ contract.freelancerName }}</div>
+                <small style="color: #718096;">{{ contract.freelancerEmail }}</small>
+              </td>
+              <td>
+                <div>{{ contract.clientName }}</div>
+                <small style="color: #718096;">{{ contract.clientEmail }}</small>
+              </td>
+              <td><strong>{{ contract.contractAmount | number:'1.2-2' }} {{ contract.currency }}</strong></td>
+              <td>{{ contract.paymentType }}</td>
+              <td>{{ contract.startDate | date:'mediumDate' }}</td>
+              <td>{{ contract.endDate | date:'mediumDate' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(contract.status)">
+                  {{ contract.status }}
+                </span>
+              </td>
+              <td class="actions">
+                <button class="btn-icon btn-signature" (click)="openSignatureModal(contract, 'Client')" title="Client Signature">
+                  <i class="fas fa-user-edit"></i>
+                </button>
+                <button class="btn-icon btn-signature-alt" (click)="openSignatureModal(contract, 'Freelancer')" title="Freelancer Signature">
+                  <i class="fas fa-signature"></i>
+                </button>
+                <button class="btn-icon btn-pdf" (click)="generateContractPdf(contract)" title="Generate PDF">
+                  <i class="fas fa-file-pdf"></i>
+                </button>
+                <button class="btn-icon btn-activate" *ngIf="contract.status === 'PENDING'" (click)="activateContract(contract)" title="Activate">
+                  <i class="fas fa-play-circle"></i>
+                </button>
+                <button class="btn-icon btn-complete" *ngIf="contract.status === 'ACTIVE'" (click)="completeContract(contract)" title="Complete">
+                  <i class="fas fa-check-double"></i>
+                </button>
+                <button class="btn-icon btn-dispute" *ngIf="contract.status === 'ACTIVE'" (click)="openDisputeModal(contract)" title="Raise Dispute">
+                  <i class="fas fa-exclamation-triangle"></i>
+                </button>
+                <button class="btn-icon btn-resolve" *ngIf="contract.status === 'DISPUTED'" (click)="openResolveModal(contract)" title="Resolve Dispute">
+                  <i class="fas fa-handshake"></i>
+                </button>
+                <button class="btn-icon btn-renew" *ngIf="contract.status === 'ACTIVE' || contract.status === 'EXPIRED'" (click)="openRenewModal(contract)" title="Renew">
+                  <i class="fas fa-redo"></i>
+                </button>
+                <button class="btn-icon btn-duplicate" (click)="duplicateContract(contract)" title="Duplicate">
+                  <i class="fas fa-copy"></i>
+                </button>
+                <button class="btn-icon btn-edit" (click)="openEditModal(contract)" title="Edit">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon btn-delete" (click)="deleteContract(contract.idContract!)" title="Delete">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="filteredContracts.length === 0">
+              <td colspan="10" class="no-data">No contracts found</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="loading-state" *ngIf="loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading contracts...</p>
+      </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEditMode ? 'Edit Contract' : 'New Freelance Contract' }}</h2>
+      <button class="btn-close" (click)="closeModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form>
+        <div class="form-section">
+          <h3><i class="fas fa-file-signature"></i> Contract Information</h3>
+          <div class="form-row">
+            <div class="form-group" [class.has-error]="errors['contractTitle']">
+              <label>Contract Title *</label>
+              <input type="text" [(ngModel)]="currentContract.contractTitle" name="contractTitle"
+                placeholder="e.g., Website Development Project" required>
+              <span class="field-error" *ngIf="errors['contractTitle']">
+                <i class="fas fa-exclamation-circle"></i> {{ errors['contractTitle'] }}
+              </span>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Contract Type</label>
+              <select [(ngModel)]="currentContract.contractType" name="contractType">
+                <option *ngFor="let type of contractTypes" [value]="type">{{ type }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Status *</label>
+              <select [(ngModel)]="currentContract.status" name="status" required>
+                <option *ngFor="let status of contractStatuses" [value]="status">{{ status }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-user-tie"></i> Freelancer Details</h3>
+          <div class="form-row">
+            <div class="form-group" [class.has-error]="errors['freelancerName']">
+              <label>Freelancer Name *</label>
+              <input type="text" [(ngModel)]="currentContract.freelancerName" name="freelancerName"
+                placeholder="John Doe" required>
+              <span class="field-error" *ngIf="errors['freelancerName']">
+                <i class="fas fa-exclamation-circle"></i> {{ errors['freelancerName'] }}
+              </span>
+            </div>
+            <div class="form-group" [class.has-error]="errors['freelancerEmail']">
+              <label>Freelancer Email *</label>
+              <input type="email" [(ngModel)]="currentContract.freelancerEmail" name="freelancerEmail"
+                placeholder="freelancer@example.com" required>
+              <span class="field-error" *ngIf="errors['freelancerEmail']">
+                <i class="fas fa-exclamation-circle"></i> {{ errors['freelancerEmail'] }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-building"></i> Client Details</h3>
+          <div class="form-row">
+            <div class="form-group" [class.has-error]="errors['clientName']">
+              <label>Client Name *</label>
+              <input type="text" [(ngModel)]="currentContract.clientName" name="clientName"
+                placeholder="ABC Company" required>
+              <span class="field-error" *ngIf="errors['clientName']">
+                <i class="fas fa-exclamation-circle"></i> {{ errors['clientName'] }}
+              </span>
+            </div>
+            <div class="form-group" [class.has-error]="errors['clientEmail']">
+              <label>Client Email *</label>
+              <input type="email" [(ngModel)]="currentContract.clientEmail" name="clientEmail"
+                placeholder="client@company.com" required>
+              <span class="field-error" *ngIf="errors['clientEmail']">
+                <i class="fas fa-exclamation-circle"></i> {{ errors['clientEmail'] }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-calendar-alt"></i> Timeline</h3>
+          <div class="form-row">
+            <div class="form-group" [class.has-error]="errors['startDate']">
+              <label>Start Date *</label>
+              <input type="date" [(ngModel)]="currentContract.startDate" name="startDate" required>
+              <span class="field-error" *ngIf="errors['startDate']">
+                <i class="fas fa-exclamation-circle"></i> {{ errors['startDate'] }}
+              </span>
+            </div>
+            <div class="form-group" [class.has-error]="errors['endDate']">
+              <label>End Date *</label>
+              <input type="date" [(ngModel)]="currentContract.endDate" name="endDate" required>
+              <span class="field-error" *ngIf="errors['endDate']">
+                <i class="fas fa-exclamation-circle"></i> {{ errors['endDate'] }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-dollar-sign"></i> Payment Details</h3>
+          <div class="form-row">
+            <div class="form-group" [class.has-error]="errors['contractAmount']">
+              <label>Contract Amount *</label>
+              <input type="number" [(ngModel)]="currentContract.contractAmount" name="contractAmount"
+                placeholder="5000" min="0" step="0.01" required>
+              <span class="field-error" *ngIf="errors['contractAmount']">
+                <i class="fas fa-exclamation-circle"></i> {{ errors['contractAmount'] }}
+              </span>
+            </div>
+            <div class="form-group">
+              <label>Currency</label>
+              <select [(ngModel)]="currentContract.currency" name="currency">
+                <option *ngFor="let curr of currencies" [value]="curr">{{ curr }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Payment Type *</label>
+              <select [(ngModel)]="currentContract.paymentType" name="paymentType" required>
+                <option *ngFor="let type of paymentTypes" [value]="type">{{ type }}</option>
+              </select>
+            </div>
+            <div class="form-group" [class.has-error]="errors['paymentTermsDays']">
+              <label>Payment Terms (Days)</label>
+              <input type="number" [(ngModel)]="currentContract.paymentTermsDays" name="paymentTermsDays"
+                placeholder="30" min="0">
+              <span class="field-error" *ngIf="errors['paymentTermsDays']">
+                <i class="fas fa-exclamation-circle"></i> {{ errors['paymentTermsDays'] }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-tasks"></i> Project Details</h3>
+          <div class="form-group">
+            <label>Project Description</label>
+            <textarea [(ngModel)]="currentContract.projectDescription" name="projectDescription"
+              rows="3" placeholder="Brief description of the project..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Deliverables</label>
+            <textarea [(ngModel)]="currentContract.deliverables" name="deliverables"
+              rows="3" placeholder="List of deliverables..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Terms and Conditions</label>
+            <textarea [(ngModel)]="currentContract.termsAndConditions" name="termsAndConditions"
+              rows="3" placeholder="Terms and conditions..."></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+      <button class="btn-primary" (click)="saveContract()">
+        <i class="fas fa-save"></i> {{ isEditMode ? 'Update Contract' : 'Create Contract' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Signature Modal -->
+<app-signature-modal
+  *ngIf="showSignatureModal"
+  [signerName]="currentSignerName"
+  [signerRole]="currentSignerRole"
+  (signatureSaved)="onSignatureSaved($event)"
+  (modalClosed)="onSignatureModalClosed()">
+</app-signature-modal>
+
+<!-- ─── Dispute Modal ──────────────────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showDisputeModal" (click)="showDisputeModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header" style="background: linear-gradient(135deg,#e53e3e,#c53030); border-radius:20px 20px 0 0;">
+      <h2 style="color:white"><i class="fas fa-exclamation-triangle"></i> Raise Dispute</h2>
+      <button class="btn-close" style="color:white;background:rgba(255,255,255,0.2)" (click)="showDisputeModal = false"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Raised By *</label>
+        <select [(ngModel)]="disputeForm.raisedBy" name="raisedBy">
+          <option value="CLIENT">Client</option>
+          <option value="FREELANCER">Freelancer</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Reason *</label>
+        <input type="text" [(ngModel)]="disputeForm.reason" name="reason" placeholder="e.g. Late delivery, Payment issue...">
+      </div>
+      <div class="form-group">
+        <label>Description *</label>
+        <textarea [(ngModel)]="disputeForm.description" name="description" rows="3" placeholder="Describe the dispute in detail..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showDisputeModal = false">Cancel</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#e53e3e,#c53030)" (click)="submitDispute()">
+        <i class="fas fa-exclamation-triangle"></i> Raise Dispute
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Resolve Dispute Modal ─────────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showResolveModal" (click)="showResolveModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header" style="background: linear-gradient(135deg,#48bb78,#38a169); border-radius:20px 20px 0 0;">
+      <h2 style="color:white"><i class="fas fa-handshake"></i> Resolve Dispute</h2>
+      <button class="btn-close" style="color:white;background:rgba(255,255,255,0.2)" (click)="showResolveModal = false"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Resolution *</label>
+        <textarea [(ngModel)]="resolveText" name="resolution" rows="3" placeholder="Describe how the dispute was resolved..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showResolveModal = false">Cancel</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#48bb78,#38a169)" (click)="submitResolve()">
+        <i class="fas fa-check"></i> Resolve
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Renew Modal ────────────────────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showRenewModal" (click)="showRenewModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header" style="background: linear-gradient(135deg,#667eea,#764ba2); border-radius:20px 20px 0 0;">
+      <h2 style="color:white"><i class="fas fa-redo"></i> Renew Contract</h2>
+      <button class="btn-close" style="color:white;background:rgba(255,255,255,0.2)" (click)="showRenewModal = false"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>New End Date *</label>
+        <input type="date" [(ngModel)]="renewForm.newEndDate" name="newEndDate">
+      </div>
+      <div class="form-group">
+        <label>New Amount (leave empty to keep current)</label>
+        <input type="number" [(ngModel)]="renewForm.newAmount" name="newAmount" min="0" step="0.01" placeholder="Optional">
+      </div>
+      <div class="form-group">
+        <label>Renewal Note</label>
+        <textarea [(ngModel)]="renewForm.renewalNote" name="renewalNote" rows="2" placeholder="Optional note..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showRenewModal = false">Cancel</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#667eea,#764ba2)" (click)="submitRenew()">
+        <i class="fas fa-redo"></i> Renew Contract
+      </button>
+    </div>
+  </div>
+</div>

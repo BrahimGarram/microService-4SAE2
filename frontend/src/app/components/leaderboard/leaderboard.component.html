@@ -1,0 +1,194 @@
+<div class="leaderboard-container">
+  <div class="page-header">
+    <h1><i class="fas fa-ranking-star"></i> Freelancer Leaderboard</h1>
+    <p class="subtitle">Top performing freelancers ranked by missions and ratings</p>
+    <button class="refresh-btn" (click)="load()"><i class="fas fa-sync-alt"></i> Refresh</button>
+  </div>
+
+  <!-- Top 3 Podium -->
+  <div *ngIf="!loading && !error && entries.length >= 3" class="podium">
+    <!-- 2nd place -->
+    <div class="podium-item podium-2">
+      <div class="podium-avatar">
+        <i [ngClass]="getLevelIcon(entries[1].currentLevel)" [class]="getLevelClass(entries[1].currentLevel)"></i>
+      </div>
+      <div class="podium-name">{{ entries[1].freelancerName }}</div>
+      <div class="podium-missions">{{ entries[1].missionsCompleted }} missions</div>
+      <div class="podium-rank rank-silver"><i class="fas fa-medal"></i> 2nd</div>
+    </div>
+    <!-- 1st place -->
+    <div class="podium-item podium-1">
+      <div class="podium-crown"><i class="fas fa-crown"></i></div>
+      <div class="podium-avatar">
+        <i [ngClass]="getLevelIcon(entries[0].currentLevel)" [class]="getLevelClass(entries[0].currentLevel)"></i>
+      </div>
+      <div class="podium-name">{{ entries[0].freelancerName }}</div>
+      <div class="podium-missions">{{ entries[0].missionsCompleted }} missions</div>
+      <div class="podium-rank rank-gold"><i class="fas fa-crown"></i> 1st</div>
+    </div>
+    <!-- 3rd place -->
+    <div class="podium-item podium-3">
+      <div class="podium-avatar">
+        <i [ngClass]="getLevelIcon(entries[2].currentLevel)" [class]="getLevelClass(entries[2].currentLevel)"></i>
+      </div>
+      <div class="podium-name">{{ entries[2].freelancerName }}</div>
+      <div class="podium-missions">{{ entries[2].missionsCompleted }} missions</div>
+      <div class="podium-rank rank-bronze"><i class="fas fa-medal"></i> 3rd</div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading leaderboard...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading" class="error-container">
+    <i class="fas fa-exclamation-circle"></i>
+    <p>{{ error }}</p>
+    <button class="retry-btn" (click)="load()">Retry</button>
+  </div>
+
+  <!-- Empty -->
+  <div *ngIf="!loading && !error && entries.length === 0" class="empty-state">
+    <i class="fas fa-users"></i>
+    <h3>No freelancers yet</h3>
+    <p>Stats will appear here once freelancers are added.</p>
+  </div>
+
+  <!-- Full Table -->
+  <div *ngIf="!loading && !error && entries.length > 0" class="leaderboard-table-wrap">
+    <table class="leaderboard-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Freelancer</th>
+          <th>Level</th>
+          <th>Missions</th>
+          <th>Rating</th>
+          <th>XP</th>
+          <th>Badges</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let entry of entries" [class.top-row]="entry.rank <= 3">
+          <td class="rank-cell">
+            <i [ngClass]="getRankIcon(entry.rank)"></i>
+            <span *ngIf="entry.rank > 3">{{ entry.rank }}</span>
+          </td>
+          <td class="name-cell">
+            <div class="freelancer-name">{{ entry.freelancerName }}</div>
+            <div class="freelancer-email">{{ entry.freelancerEmail }}</div>
+          </td>
+          <td>
+            <span *ngIf="entry.currentLevel" class="level-badge" [ngClass]="getLevelClass(entry.currentLevel)">
+              <i [ngClass]="getLevelIcon(entry.currentLevel)"></i> {{ entry.currentLevel }}
+            </span>
+            <span *ngIf="!entry.currentLevel" class="no-level">—</span>
+          </td>
+          <td class="missions-cell">{{ entry.missionsCompleted }}</td>
+          <td class="rating-cell">
+            <span class="stars">
+              <i class="fas fa-star" *ngFor="let s of getStars(entry.averageRating)"></i>
+              <i class="far fa-star" *ngFor="let s of getEmptyStars(entry.averageRating)"></i>
+            </span>
+            <span class="rating-num">{{ entry.averageRating | number:'1.1-1' }}</span>
+          </td>
+          <td class="xp-cell">
+            <span class="xp-badge">
+              <i class="fas fa-bolt"></i> {{ entry.totalXp }} XP
+            </span>
+            <div class="xp-mini-bar">
+              <div class="xp-mini-fill" [style.width.%]="entry.progressPercent"></div>
+            </div>
+          </td>
+          <td class="badges-cell">
+            <span class="badge-count" *ngIf="entry.badges.length > 0">
+              <i class="fas fa-award"></i> {{ entry.badges.length }}
+            </span>
+            <span *ngIf="entry.badges.length === 0" class="no-badges">—</span>
+          </td>
+          <td>
+            <button class="btn-view" (click)="viewDetails(entry)">
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" *ngIf="selectedEntry" (click)="selectedEntry = null">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><i class="fas fa-user-circle"></i> {{ selectedEntry.freelancerName }}</h2>
+      <button class="close-btn" (click)="selectedEntry = null"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="profile-stats">
+        <div class="stat-item">
+          <span class="stat-label">Rank</span>
+          <span class="stat-value">#{{ selectedEntry.rank }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Missions</span>
+          <span class="stat-value">{{ selectedEntry.missionsCompleted }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Rating</span>
+          <span class="stat-value">{{ selectedEntry.averageRating | number:'1.1-1' }} / 5</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Level</span>
+          <span class="stat-value level-badge" [ngClass]="getLevelClass(selectedEntry.currentLevel)">
+            {{ selectedEntry.currentLevel || 'None' }}
+          </span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Total XP</span>
+          <span class="stat-value xp-value"><i class="fas fa-bolt"></i> {{ selectedEntry.totalXp }}</span>
+        </div>
+      </div>
+      <!-- XP progress bar in modal -->
+      <div class="modal-xp-section">
+        <div class="modal-xp-header">
+          <span>{{ selectedEntry.currentLevel || 'NONE' }}</span>
+          <span class="xp-count">{{ selectedEntry.xpProgress }} / {{ selectedEntry.xpForNextLevel - selectedEntry.xpForCurrentLevel }} XP</span>
+          <span>{{ selectedEntry.nextLevelName }}</span>
+        </div>
+        <div class="modal-xp-bar">
+          <div class="modal-xp-fill" [style.width.%]="selectedEntry.progressPercent"></div>
+        </div>
+        <div class="modal-xp-hint" *ngIf="selectedEntry.nextLevelName !== 'MAX'">
+          {{ selectedEntry.xpNeeded }} XP restants pour atteindre {{ selectedEntry.nextLevelName }}
+        </div>
+        <div class="modal-xp-hint" *ngIf="selectedEntry.nextLevelName === 'MAX'">
+          🏆 Niveau maximum atteint !
+        </div>
+      </div>
+
+      <h3 class="badges-title"><i class="fas fa-award"></i> Earned Badges ({{ selectedEntry.badges.length }})</h3>
+      <div *ngIf="selectedEntry.badges.length === 0" class="no-badges-msg">No badges earned yet.</div>
+      <div class="earned-badges">
+        <div class="earned-badge" *ngFor="let badge of selectedEntry.badges">
+          <i [ngClass]="getLevelIcon(badge.level)" [class]="'badge-icon ' + getLevelClass(badge.level)"></i>
+          <div>
+            <div class="badge-name">{{ badge.name }}</div>
+            <div class="badge-desc">{{ badge.description }}</div>
+            <span class="level-tag" [ngClass]="getLevelClass(badge.level)">{{ badge.level }}</span>
+            <span class="earned-date" *ngIf="badge.earnedAt">
+              <i class="fas fa-calendar-check"></i> Earned {{ formatEarnedDate(badge.earnedAt) }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-close" (click)="selectedEntry = null">Close</button>
+    </div>
+  </div>
+</div>

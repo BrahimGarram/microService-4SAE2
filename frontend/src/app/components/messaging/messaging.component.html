@@ -1,0 +1,118 @@
+<div class="messaging-page">
+  <div class="messaging-container">
+    
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1><i class="fas fa-envelope"></i> Messages</h1>
+      <p *ngIf="unreadCount > 0" class="unread-badge">
+        {{ unreadCount }} {{ unreadCount === 1 ? 'unread message' : 'unread messages' }}
+      </p>
+    </div>
+
+    <div class="messaging-layout">
+      <!-- Conversations Sidebar -->
+      <div class="conversations-sidebar">
+        <div class="sidebar-header">
+          <h2>Conversations</h2>
+          <button class="btn-new-conversation" (click)="router.navigate(['/browse-users'])">
+            <i class="fas fa-plus"></i> New
+          </button>
+        </div>
+        
+        <div *ngIf="loading" class="loading-conversations">
+          <p>Loading conversations...</p>
+        </div>
+        
+        <div *ngIf="!loading && conversations.length === 0" class="no-conversations">
+          <p>No conversations yet. Start messaging users!</p>
+        </div>
+        
+        <div class="conversations-list">
+          <div *ngFor="let user of conversations" 
+               class="conversation-item" 
+               [class.active]="selectedConversation?.id === user.id"
+               (click)="openConversation(user.id)">
+            <div class="conversation-avatar" [style.background-image]="user.profilePicture ? 'url(' + user.profilePicture + ')' : 'none'">
+              <i *ngIf="!user.profilePicture" class="fas fa-user-circle"></i>
+            </div>
+            <div class="conversation-info">
+              <h3>{{ getPartnerName(user) }}</h3>
+              <p *ngIf="user.email">{{ user.email }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages Area -->
+      <div class="messages-area">
+        <div *ngIf="!selectedConversation" class="no-conversation-selected">
+          <i class="fas fa-comments"></i>
+          <h2>Select a conversation</h2>
+          <p>Choose a conversation from the sidebar or start a new one</p>
+          <button class="btn-browse-users" (click)="router.navigate(['/browse-users'])">
+            <i class="fas fa-users"></i> Browse Users
+          </button>
+        </div>
+
+        <div *ngIf="selectedConversation" class="conversation-view">
+          <!-- Conversation Header -->
+          <div class="conversation-header">
+            <div class="conversation-partner">
+              <div class="partner-avatar" [style.background-image]="selectedConversation.profilePicture ? 'url(' + selectedConversation.profilePicture + ')' : 'none'">
+                <i *ngIf="!selectedConversation.profilePicture" class="fas fa-user-circle"></i>
+              </div>
+              <div class="partner-info">
+                <h3>{{ getPartnerName(selectedConversation) }}</h3>
+                <p *ngIf="selectedConversation.email">{{ selectedConversation.email }}</p>
+              </div>
+            </div>
+            <button class="btn-view-profile" (click)="router.navigate(['/user', selectedConversation.id])">
+              <i class="fas fa-user"></i> View Profile
+            </button>
+          </div>
+
+          <!-- Messages Container -->
+          <div class="messages-container" #messagesContainer>
+            <div *ngIf="loadingMessages" class="loading-messages">
+              <p>Loading messages...</p>
+            </div>
+            
+            <div *ngIf="!loadingMessages && messages.length === 0" class="no-messages">
+              <p>No messages yet. Start the conversation!</p>
+            </div>
+            
+            <div *ngIf="!loadingMessages && messages.length > 0" class="messages-list">
+              <div *ngFor="let message of messages; trackBy: trackByMessageId" 
+                   class="message-item" 
+                   [class.my-message]="isMyMessage(message)"
+                   [class.their-message]="!isMyMessage(message)">
+                <div class="message-content">
+                  <div class="message-header">
+                    <strong>{{ message.senderUsername }}</strong>
+                    <span class="message-time">{{ message.sentAt | date:'short' }}</span>
+                  </div>
+                  <p class="message-text">{{ message.content }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Message Input -->
+          <div class="message-input-area">
+            <textarea 
+              [(ngModel)]="newMessage.content"
+              placeholder="Type your message..."
+              rows="2"
+              (keydown.enter)="$event.preventDefault(); sendMessage()"
+              class="message-input"></textarea>
+            <button class="btn-send" (click)="sendMessage()" [disabled]="sendingMessage || !newMessage.content.trim()">
+              <i class="fas fa-paper-plane" *ngIf="!sendingMessage"></i>
+              <i class="fas fa-spinner fa-spin" *ngIf="sendingMessage"></i>
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

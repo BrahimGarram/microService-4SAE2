@@ -1,0 +1,251 @@
+<div class="page-content">
+      <div class="page-header">
+        <div class="header-left">
+          <h1>Payments Management</h1>
+          <p>Manage all payment transactions</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn-upgrade" (click)="navigateToSubscription()">
+            <i class="fas fa-crown"></i> Upgrade Plan
+          </button>
+          <button class="btn-primary" (click)="openCreateModal()">
+            <i class="fas fa-plus"></i> New Payment
+          </button>
+        </div>
+      </div>
+
+      <!-- Statistics Cards -->
+      <div class="stats-grid">
+        <div class="stat-card stat-primary">
+          <div class="stat-icon">
+            <i class="fas fa-money-bill-wave"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ totalPayments }}</h3>
+            <p>Total Payments</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-success">
+          <div class="stat-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ successfulPayments }}</h3>
+            <p>Successful Payments</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-warning">
+          <div class="stat-icon">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ pendingPayments }}</h3>
+            <p>Pending Payments</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-danger">
+          <div class="stat-icon">
+            <i class="fas fa-times-circle"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ failedPayments }}</h3>
+            <p>Failed Payments</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-info">
+          <div class="stat-icon">
+            <i class="fas fa-calendar-alt"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ currentMonthRevenue | number:'1.2-2' }}</h3>
+            <p>Current Month Revenue</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="filters-section">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input 
+            type="text" 
+            placeholder="Search by ID, amount, transaction..." 
+            [(ngModel)]="searchTerm"
+            name="searchTerm"
+            (ngModelChange)="onSearchChange()"
+            (input)="onSearchChange()">
+        </div>
+        <div class="filter-group">
+          <label>Status:</label>
+          <select 
+            [(ngModel)]="filterStatus" 
+            name="filterStatus"
+            (ngModelChange)="onStatusFilterChange()">
+            <option value="ALL">All Statuses</option>
+            <option *ngFor="let status of paymentStatuses" [value]="status">{{ status }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="payments-grid" *ngIf="!loading">
+        <div class="payment-card" *ngFor="let payment of filteredPayments">
+          <div class="payment-card-header">
+            <div class="payment-id-badge">
+              <span class="payment-id">#{{ payment.idPayment }}</span>
+            </div>
+            <div class="payment-actions">
+              <button class="btn-icon btn-edit" (click)="openEditModal(payment)" title="Edit">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn-icon btn-delete" (click)="deletePayment(payment.idPayment!)" title="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="payment-card-body">
+            <div class="payment-amount">
+              <i class="fas fa-dollar-sign"></i>
+              <span class="amount">{{ payment.amount | number:'1.2-2' }}</span>
+            </div>
+
+            <div class="payment-info-grid">
+              <div class="info-item">
+                <i class="fas fa-calendar-day"></i>
+                <div class="info-content">
+                  <span class="info-label">Payment Date</span>
+                  <span class="info-value">{{ payment.paymentDate | date:'mediumDate' }}</span>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <i class="fas fa-credit-card"></i>
+                <div class="info-content">
+                  <span class="info-label">Payment Method</span>
+                  <span class="info-value">{{ payment.paymentMethod || 'N/A' }}</span>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <i class="fas fa-hashtag"></i>
+                <div class="info-content">
+                  <span class="info-label">Transaction ID</span>
+                  <span class="info-value transaction-id">{{ payment.transactionId || 'N/A' }}</span>
+                </div>
+              </div>
+
+              <div class="info-item full-width">
+                <i class="fas fa-file-alt"></i>
+                <div class="info-content">
+                  <span class="info-label">Description</span>
+                  <span class="info-value">{{ payment.description || 'No description' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="payment-card-footer">
+            <span class="status-badge" [ngClass]="getStatusClass(payment.status)">
+              <i class="fas" [ngClass]="{
+                'fa-check-circle': payment.status === 'COMPLETED',
+                'fa-clock': payment.status === 'PENDING',
+                'fa-times-circle': payment.status === 'FAILED',
+                'fa-ban': payment.status === 'CANCELLED',
+                'fa-undo': payment.status === 'REFUNDED'
+              }"></i>
+              {{ payment.status }}
+            </span>
+          </div>
+        </div>
+
+        <div class="empty-state" *ngIf="filteredPayments.length === 0">
+          <i class="fas fa-inbox"></i>
+          <h3>No payments found</h3>
+          <p>Try adjusting your search or filters</p>
+        </div>
+      </div>
+
+      <div class="loading-state" *ngIf="loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading payments...</p>
+      </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEditMode ? 'Edit Payment' : 'New Payment' }}</h2>
+      <button class="btn-close" (click)="closeModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form>
+        <div class="form-group">
+          <label>Amount *</label>
+          <input 
+            type="number" 
+            [(ngModel)]="currentPayment.amount" 
+            name="amount"
+            placeholder="0.00"
+            min="0"
+            step="0.01"
+            required>
+        </div>
+        
+        <div class="form-group">
+          <label>Payment Date *</label>
+          <input 
+            type="date" 
+            [(ngModel)]="currentPayment.paymentDate" 
+            name="paymentDate"
+            required>
+        </div>
+        
+        <div class="form-group">
+          <label>Status *</label>
+          <select [(ngModel)]="currentPayment.status" name="status" required>
+            <option *ngFor="let status of paymentStatuses" [value]="status">{{ status }}</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Payment Method</label>
+          <input 
+            type="text" 
+            [(ngModel)]="currentPayment.paymentMethod" 
+            name="paymentMethod"
+            placeholder="Credit Card, Bank Transfer, etc.">
+        </div>
+        
+        <div class="form-group">
+          <label>Transaction ID</label>
+          <input 
+            type="text" 
+            [(ngModel)]="currentPayment.transactionId" 
+            name="transactionId"
+            placeholder="TXN123456">
+        </div>
+        
+        <div class="form-group">
+          <label>Description</label>
+          <textarea 
+            [(ngModel)]="currentPayment.description" 
+            name="description"
+            rows="3"
+            placeholder="Payment description..."></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+      <button class="btn-primary" (click)="savePayment()">
+        <i class="fas fa-save"></i> {{ isEditMode ? 'Update Payment' : 'Create Payment' }}
+      </button>
+    </div>
+  </div>
+</div>

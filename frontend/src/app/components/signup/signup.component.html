@@ -1,0 +1,117 @@
+<div class="signup-page">
+  <div class="signup-background">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="gradient-orb orb-3"></div>
+  </div>
+  
+  <div class="signup-container">
+    <div class="signup-card">
+      <div class="signup-header">
+        <div class="logo-section">
+          <img src="assets/new/logo.png" alt="Freelancify" class="auth-logo" onerror="this.src='assets/logo.png'">
+          <h1>Create Account</h1>
+          <p>Join Freelancify and start your journey</p>
+        </div>
+      </div>
+      
+      <form class="signup-form" (ngSubmit)="onSignUp()">
+        <div class="form-group">
+          <label for="signup-username">
+            <i class="fas fa-user"></i> Username
+          </label>
+          <input 
+            type="text" 
+            id="signup-username" 
+            [(ngModel)]="signUpForm.username" 
+            name="signup-username"
+            placeholder="Choose a username"
+            required>
+        </div>
+        
+        <div class="form-group">
+          <label for="signup-email">
+            <i class="fas fa-envelope"></i> Email
+          </label>
+          <input 
+            type="email" 
+            id="signup-email" 
+            [(ngModel)]="signUpForm.email" 
+            name="signup-email"
+            placeholder="Enter your email"
+            required>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="signup-password">
+              <i class="fas fa-lock"></i> Password
+            </label>
+            <input 
+              type="password" 
+              id="signup-password" 
+              [(ngModel)]="signUpForm.password" 
+              name="signup-password"
+              placeholder="Create a password"
+              required>
+          </div>
+          
+          <div class="form-group">
+            <label for="signup-confirm-password">
+              <i class="fas fa-lock"></i> Confirm Password
+            </label>
+            <input 
+              type="password" 
+              id="signup-confirm-password" 
+              [(ngModel)]="signUpForm.confirmPassword" 
+              name="signup-confirm-password"
+              placeholder="Confirm password"
+              required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="signup-role">
+            <i class="fas fa-user-tag"></i> I want to be a
+          </label>
+          <select 
+            id="signup-role" 
+            [(ngModel)]="signUpForm.role" 
+            name="signup-role"
+            required>
+            <option value="USER">Client</option>
+            <option value="FREELANCER">Freelancer</option>
+          </select>
+        </div>
+        
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="signUpForm.acceptTerms" name="acceptTerms" required>
+            <span>I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a></span>
+          </label>
+        </div>
+        
+        <button type="submit" class="btn-signup" [disabled]="isLoading">
+          <span *ngIf="!isLoading">
+            <i class="fas fa-user-plus"></i> Create Account
+          </span>
+          <span *ngIf="isLoading">
+            <i class="fas fa-spinner fa-spin"></i> Creating account...
+          </span>
+        </button>
+        
+        <div *ngIf="signUpError" class="error-message">
+          <i class="fas fa-exclamation-circle"></i> {{ signUpError }}
+        </div>
+        
+        <div *ngIf="signUpSuccess" class="success-message">
+          <i class="fas fa-check-circle"></i> {{ signUpSuccess }}
+        </div>
+      </form>
+      
+      <div class="signup-footer">
+        <p>Already have an account? <a routerLink="/login">Sign In</a></p>
+      </div>
+    </div>
+  </div>
+</div>

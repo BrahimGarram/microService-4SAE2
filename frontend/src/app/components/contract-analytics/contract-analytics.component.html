@@ -1,0 +1,114 @@
+<div class="analytics-page">
+
+  <div class="page-header">
+    <div>
+      <h1><i class="fas fa-chart-bar"></i> Contract & Payment Analytics</h1>
+      <p>Real-time insights from contracts and payments</p>
+    </div>
+    <button class="btn-refresh" (click)="loadAll()" [disabled]="loading">
+      <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i> Refresh
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <i class="fas fa-spinner fa-spin"></i><p>Loading analytics...</p>
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- ── KPI Cards ─────────────────────────────────────────────────────── -->
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-icon"><i class="fas fa-file-contract"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ contractStats?.totalContracts || 0 }}</div>
+          <div class="kpi-label">Total Contracts</div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-orange">
+        <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ contractStats?.expiringIn7Days || 0 }}</div>
+          <div class="kpi-label">Expiring in 7 Days</div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-red">
+        <div class="kpi-icon"><i class="fas fa-exclamation-circle"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ contractStats?.overdueContracts || 0 }}</div>
+          <div class="kpi-label">Overdue Contracts</div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-icon"><i class="fas fa-dollar-sign"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ paymentStats?.totalRevenue | number:'1.0-0' }}</div>
+          <div class="kpi-label">Total Revenue</div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-purple">
+        <div class="kpi-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ paymentStats?.averagePaymentAmount | number:'1.0-0' }}</div>
+          <div class="kpi-label">Avg Payment</div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-yellow">
+        <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-value">{{ paymentStats?.duplicateTransactions || 0 }}</div>
+          <div class="kpi-label">Duplicate Transactions</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Charts Row 1 ──────────────────────────────────────────────────── -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title"><i class="fas fa-chart-pie"></i> Contracts by Status</div>
+        <div class="chart-container"><canvas #statusChart></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><i class="fas fa-trophy"></i> Top Earning Freelancers</div>
+        <div class="chart-container"><canvas #revenueChart></canvas></div>
+      </div>
+    </div>
+
+    <!-- ── Charts Row 2 ──────────────────────────────────────────────────── -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title"><i class="fas fa-credit-card"></i> Revenue by Payment Method</div>
+        <div class="chart-container"><canvas #methodChart></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><i class="fas fa-calendar-alt"></i> Monthly Revenue</div>
+        <div class="chart-container"><canvas #monthlyChart></canvas></div>
+      </div>
+    </div>
+
+    <!-- ── Payment Status Breakdown ─────────────────────────────────────── -->
+    <div class="table-card" *ngIf="paymentStats?.countByStatus">
+      <div class="chart-title"><i class="fas fa-list"></i> Payment Status Breakdown</div>
+      <div class="status-breakdown">
+        <div class="breakdown-item" *ngFor="let key of getKeys(paymentStats.countByStatus)">
+          <span class="breakdown-label">{{ key }}</span>
+          <div class="breakdown-bar-wrap">
+            <div class="breakdown-bar" [style.width.%]="(getValue(paymentStats.countByStatus, key) / paymentStats.totalPayments) * 100"
+              [ngClass]="'bar-' + key.toLowerCase()"></div>
+          </div>
+          <span class="breakdown-count">{{ getValue(paymentStats.countByStatus, key) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Failed Payments Alert ─────────────────────────────────────────── -->
+    <div class="alert-card" *ngIf="paymentStats?.failedOlderThan7Days > 0">
+      <i class="fas fa-exclamation-triangle"></i>
+      <div>
+        <strong>{{ paymentStats.failedOlderThan7Days }} failed payment(s)</strong> older than 7 days need attention.
+        <a routerLink="/admin/payments">View Payments →</a>
+      </div>
+    </div>
+
+  </ng-container>
+</div>

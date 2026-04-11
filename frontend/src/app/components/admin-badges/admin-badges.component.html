@@ -1,0 +1,154 @@
+<div class="admin-badges-container">
+  <div class="page-header">
+    <h1><i class="fas fa-trophy"></i> Badges & Levels</h1>
+    <p class="subtitle">Manage badges, levels, and freelancer rankings</p>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <button class="btn-primary" (click)="openCreate()">
+      <i class="fas fa-plus"></i> New Badge
+    </button>
+    <button class="btn-secondary" (click)="openStatsModal()">
+      <i class="fas fa-sync-alt"></i> Update Freelancer Stats
+    </button>
+    <button class="btn-outline" (click)="loadBadges()">
+      <i class="fas fa-redo"></i> Refresh
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading badges...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading" class="error-container">
+    <i class="fas fa-exclamation-circle"></i>
+    <p>{{ error }}</p>
+    <button class="retry-btn" (click)="loadBadges()">Retry</button>
+  </div>
+
+  <!-- Badges Grid -->
+  <div *ngIf="!loading && !error" class="badges-grid">
+    <div *ngIf="badges.length === 0" class="empty-state">
+      <i class="fas fa-award"></i>
+      <h3>No badges yet</h3>
+      <p>Create your first badge to get started.</p>
+    </div>
+
+    <div class="badge-card" *ngFor="let badge of badges" [class.inactive]="!badge.active">
+      <div class="badge-level-bar" [ngClass]="getLevelClass(badge.level)"></div>
+      <div class="badge-card-body">
+        <div class="badge-icon-wrap">
+          <i [ngClass]="getLevelIcon(badge.level)" [class]="'badge-icon ' + getLevelClass(badge.level)"></i>
+        </div>
+        <div class="badge-info">
+          <h3>{{ badge.name }}</h3>
+          <p>{{ badge.description }}</p>
+          <div class="badge-meta">
+            <span class="level-tag" [ngClass]="getLevelClass(badge.level)">{{ badge.level }}</span>
+            <span class="criteria"><i class="fas fa-check-circle"></i> {{ badge.minMissionsCompleted }} missions</span>
+            <span class="criteria"><i class="fas fa-star"></i> {{ badge.minAverageRating }}+ rating</span>
+            <span class="status-tag" [class.active-tag]="badge.active" [class.inactive-tag]="!badge.active">
+              {{ badge.active ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+        </div>
+        <div class="badge-actions">
+          <button class="btn-edit" (click)="openEdit(badge)" title="Edit"><i class="fas fa-pen"></i></button>
+          <button class="btn-delete" (click)="delete(badge.id!)" title="Delete"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="showModal = false">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><i class="fas fa-award"></i> {{ editMode ? 'Edit Badge' : 'Create Badge' }}</h2>
+      <button class="close-btn" (click)="showModal = false"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" class="form-input" [(ngModel)]="form.name" placeholder="e.g. Top Freelance du Mois" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea class="form-textarea" [(ngModel)]="form.description" rows="3" placeholder="Badge description..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Level</label>
+        <select class="form-select" [(ngModel)]="form.level">
+          <option *ngFor="let l of levels" [value]="l">{{ l }}</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Min Missions Completed</label>
+          <input type="number" class="form-input" [(ngModel)]="form.minMissionsCompleted" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Min Average Rating (0-5)</label>
+          <input type="number" class="form-input" [(ngModel)]="form.minAverageRating" min="0" max="5" step="0.1" />
+        </div>
+      </div>
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" [(ngModel)]="form.active" />
+          Active
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="showModal = false">Cancel</button>
+      <button class="btn-save" (click)="save()" [disabled]="saving || !form.name">
+        <i class="fas fa-save"></i> {{ saving ? 'Saving...' : 'Save' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Update Stats Modal -->
+<div class="modal-overlay" *ngIf="showStatsModal" (click)="showStatsModal = false">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><i class="fas fa-sync-alt"></i> Update Freelancer Stats</h2>
+      <button class="close-btn" (click)="showStatsModal = false"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-hint">Enter a freelancer's stats to recalculate their badges and leaderboard rank.</p>
+      <div class="form-group">
+        <label>Freelancer Email</label>
+        <input type="email" class="form-input" [(ngModel)]="statsForm.freelancerEmail" placeholder="freelancer@example.com" />
+      </div>
+      <div class="form-group">
+        <label>Freelancer Name</label>
+        <input type="text" class="form-input" [(ngModel)]="statsForm.freelancerName" placeholder="Full name" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Missions Completed</label>
+          <input type="number" class="form-input" [(ngModel)]="statsForm.missionsCompleted" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Average Rating (0-5)</label>
+          <input type="number" class="form-input" [(ngModel)]="statsForm.averageRating" min="0" max="5" step="0.1" />
+        </div>
+      </div>
+      <div *ngIf="statsSuccess" class="success-message">
+        <i class="fas fa-check-circle"></i> {{ statsSuccess }}
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="showStatsModal = false">Close</button>
+      <button class="btn-save" (click)="submitStats()" [disabled]="statsLoading || !statsForm.freelancerEmail">
+        <i class="fas fa-sync-alt"></i> {{ statsLoading ? 'Updating...' : 'Update Stats' }}
+      </button>
+    </div>
+  </div>
+</div>

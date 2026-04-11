@@ -1,0 +1,39 @@
+<div class="signature-modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="signature-modal-content" (click)="$event.stopPropagation()">
+    <div class="signature-modal-header">
+      <h2>{{ signerRole }} Signature</h2>
+      <button class="close-btn" (click)="closeModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="signature-modal-body">
+      <div class="signer-info">
+        <i class="fas fa-user-circle"></i>
+        <span>{{ signerName }}</span>
+      </div>
+      
+      <div class="signature-instructions">
+        <i class="fas fa-info-circle"></i>
+        <p>Please sign in the box below using your mouse or touchscreen</p>
+      </div>
+      
+      <div class="signature-canvas-container">
+        <canvas #signatureCanvas class="signature-canvas"></canvas>
+        <div class="signature-placeholder" *ngIf="isSignatureEmpty()">
+          <i class="fas fa-signature"></i>
+          <p>Sign here</p>
+        </div>
+      </div>
+      
+      <div class="signature-actions">
+        <button class="btn-secondary" (click)="clearSignature()">
+          <i class="fas fa-eraser"></i> Clear
+        </button>
+        <button class="btn-primary" (click)="saveSignature()" [disabled]="isSignatureEmpty()">
+          <i class="fas fa-check"></i> Save Signature
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

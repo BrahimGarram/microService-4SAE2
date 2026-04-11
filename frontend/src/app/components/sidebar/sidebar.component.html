@@ -1,0 +1,74 @@
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo-section">
+      <img src="assets/logo.png" alt="Freelancify" class="admin-logo">
+      <h2>Freelancify</h2>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a routerLink="/admin/dashboard" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-chart-line"></i>
+      <span>Dashboard</span>
+    </a>
+    <a routerLink="/users" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-users"></i>
+      <span>Users</span>
+    </a>
+    <a routerLink="/admin/test" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-vial"></i>
+      <span>Test</span>
+    </a>
+    <a routerLink="/admin/projects" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-briefcase"></i>
+      <span>Projects</span>
+    </a>
+    <a routerLink="/admin/complaints" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span>Complaints</span>
+    </a>
+    <a routerLink="/admin/subscriptions" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-crown"></i>
+      <span>Subscriptions</span>
+    </a>
+    <a routerLink="/admin/contracts" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-file-contract"></i>
+      <span>Contracts</span>
+    </a>
+    <a routerLink="/admin/payments" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-money-bill-wave"></i>
+      <span>Payments</span>
+    </a>
+    <a routerLink="/admin/contract-analytics" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-chart-bar"></i>
+      <span>Analytics</span>
+    </a>
+    <a routerLink="/admin/badges" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-trophy"></i>
+      <span>Badges</span>
+    </a>
+    <a routerLink="/admin/leaderboard" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-ranking-star"></i>
+      <span>Leaderboard</span>
+    </a>
+  </nav>
+  
+  <!-- Subscription CTA Section -->
+  <div class="sidebar-cta">
+    <div class="cta-content">
+      <i class="fas fa-star"></i>
+      <h4>Manage Plans</h4>
+      <p>View and manage subscription plans</p>
+    </div>
+    <app-subscription-button 
+      style="minimal" 
+      size="small"
+      customText="View Plans">
+    </app-subscription-button>
+  </div>
+  <div class="sidebar-footer">
+    <button (click)="logout()" class="btn-logout">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>Logout</span>
+    </button>
+  </div>
+</aside>

@@ -1,0 +1,168 @@
+<!-- Top Bar -->
+<div class="top-bar">
+  <div class="top-bar-content">
+    <div class="top-bar-left">
+      <i class="fas fa-star"></i>
+      <span>Find the Best Instant Services Marketplace</span>
+    </div>
+    <div class="top-bar-right">
+      <a href="mailto:support&#64;freelancify.com" class="top-link">
+        <i class="fas fa-envelope"></i>
+        support&#64;freelancify.com
+      </a>
+      <a href="tel:+1234567890" class="top-link">
+        <i class="fas fa-phone"></i>
+        +1 (234) 567-890
+      </a>
+    </div>
+  </div>
+</div>
+
+<nav class="navbar" [class.scrolled]="isScrolled">
+  <div class="container">
+    <!-- Brand -->
+    <div class="nav-brand">
+      <a (click)="navigateTo('/')" class="brand-link">
+        <img src="assets/new/logo.png" alt="Freelancify" class="brand-logo" onerror="this.src='assets/logo.png'">
+        <span class="brand-text">Freelancify</span>
+      </a>
+    </div>
+
+    <!-- Main Navigation -->
+    <ul class="nav-menu" [class.active]="isMobileMenuOpen">
+      <!-- Home -->
+      <li>
+        <a (click)="navigateTo('/')" [class.active]="router.url === '/'">
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </a>
+      </li>
+
+      <!-- Services Dropdown -->
+      <li class="dropdown" (mouseenter)="showServicesDropdown = true" (mouseleave)="showServicesDropdown = false">
+        <a (click)="toggleServicesDropdown(); $event.preventDefault()" class="dropdown-trigger">
+          <i class="fas fa-th-large"></i>
+          <span>Services</span>
+          <i class="fas fa-chevron-down arrow"></i>
+        </a>
+        <ul class="dropdown-menu" [class.show]="showServicesDropdown">
+          <li><a (click)="navigateTo('/test'); closeServicesDropdown()"><i class="fas fa-flask"></i> Test Services</a></li>
+          <li><a (click)="navigateTo('/collaboration'); closeServicesDropdown()"><i class="fas fa-users"></i> Collaboration</a></li>
+          <li><a (click)="navigateTo('/projet'); closeServicesDropdown()"><i class="fas fa-briefcase"></i> Projects</a></li>
+          <li><a (click)="navigateTo('/complaints'); closeServicesDropdown()"><i class="fas fa-exclamation-triangle"></i> Claims</a></li>
+          <li><a (click)="navigateTo('/contract'); closeServicesDropdown()"><i class="fas fa-file-contract"></i> Contracts</a></li>
+        </ul>
+      </li>
+
+      <!-- Authenticated User Links -->
+      <li *ngIf="isAuthenticated">
+        <a (click)="navigateTo('/projects')" [class.active]="router.url === '/projects'">
+          <i class="fas fa-briefcase"></i>
+          <span>My Projects</span>
+        </a>
+      </li>
+
+      <li *ngIf="isAuthenticated">
+        <a (click)="navigateTo('/browse-users')" [class.active]="router.url === '/browse-users'">
+          <i class="fas fa-users"></i>
+          <span>Browse Users</span>
+        </a>
+      </li>
+
+      <li *ngIf="isAuthenticated">
+        <a (click)="navigateTo('/messages')" [class.active]="router.url === '/messages'" class="messages-link">
+          <i class="fas fa-envelope"></i>
+          <span>Messages</span>
+          <span class="badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+        </a>
+      </li>
+
+      <!-- Admin Link -->
+      <li *ngIf="isAuthenticated && isAdmin">
+        <a (click)="navigateTo('/admin/users')" [class.active]="router.url.includes('/admin')" class="admin-link">
+          <i class="fas fa-shield-alt"></i>
+          <span>Admin</span>
+        </a>
+      </li>
+
+      <!-- Contact -->
+      <li>
+        <a (click)="scrollToSection('contact'); $event.preventDefault()">
+          <i class="fas fa-phone-alt"></i>
+          <span>Contact</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- Right Actions -->
+    <div class="nav-actions">
+      <!-- Theme Toggle -->
+      <button class="icon-btn" title="Toggle Theme">
+        <i class="fas fa-moon"></i>
+      </button>
+
+      <!-- Subscription Button -->
+      <app-subscription-button 
+        *ngIf="isAuthenticated" 
+        style="gradient" 
+        size="small">
+      </app-subscription-button>
+
+      <!-- Guest Actions -->
+      <div class="auth-buttons" *ngIf="!isAuthenticated">
+        <a (click)="navigateTo('/login')" class="btn-signin">
+          <i class="fas fa-sign-in-alt"></i>
+          <span>Sign In</span>
+        </a>
+        <a (click)="navigateTo('/signup')" class="btn-signup">
+          <i class="fas fa-user-plus"></i>
+          <span>Sign Up</span>
+        </a>
+      </div>
+
+      <!-- User Profile Dropdown -->
+      <div class="user-dropdown" *ngIf="isAuthenticated" (mouseenter)="showUserDropdown = true" (mouseleave)="showUserDropdown = false">
+        <button class="user-btn" (click)="toggleUserDropdown()">
+          <i class="fas fa-user-circle"></i>
+          <span class="username">{{ username || 'User' }}</span>
+          <i class="fas fa-chevron-down arrow-small"></i>
+        </button>
+        <ul class="user-dropdown-menu" [class.show]="showUserDropdown">
+          <li class="user-info">
+            <i class="fas fa-user-circle user-avatar"></i>
+            <div>
+              <strong>{{ username }}</strong>
+              <span class="user-plan-badge" *ngIf="currentPlan">
+                <i class="fas fa-crown"></i>
+                {{ currentPlan }}
+              </span>
+              <span class="user-plan-badge free" *ngIf="!currentPlan">
+                <i class="fas fa-gift"></i>
+                FREE
+              </span>
+              <span class="user-level-badge" *ngIf="freelancerLevel"
+                    [style.background]="getLevelColor(freelancerLevel)">
+                <i [ngClass]="getLevelIcon(freelancerLevel)"></i>
+                {{ freelancerLevel }}
+                <span *ngIf="freelancerBadgeName"> — {{ freelancerBadgeName }}</span>
+              </span>
+            </div>
+          </li>
+          <li class="divider"></li>
+          <li><a (click)="navigateTo('/profile'); closeUserDropdown()"><i class="fas fa-user"></i> My Profile</a></li>
+          <li><a (click)="navigateTo('/subscription-plans'); closeUserDropdown()"><i class="fas fa-crown"></i> My Subscription</a></li>
+          <li><a (click)="navigateTo('/penalties'); closeUserDropdown()"><i class="fas fa-gavel"></i> Penalties</a></li>
+          <li class="divider"></li>
+          <li><a (click)="logout(); closeUserDropdown()" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Mobile Toggle -->
+    <div class="nav-toggle" [class.active]="isMobileMenuOpen" (click)="toggleMobileMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+</nav>

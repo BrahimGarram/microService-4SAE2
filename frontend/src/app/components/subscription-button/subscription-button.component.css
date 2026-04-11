@@ -1,0 +1,245 @@
+/* Base Button Styles */
+.subscription-btn {
+  position: relative;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.subscription-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.subscription-btn:active:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.subscription-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-text {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Size Variants */
+.subscription-btn-small {
+  padding: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+}
+
+.subscription-btn-small i {
+  font-size: 1rem;
+}
+
+.subscription-btn-medium {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+}
+
+.subscription-btn-medium i {
+  font-size: 1.25rem;
+}
+
+.subscription-btn-large {
+  padding: 1rem 2.5rem;
+  font-size: 1.125rem;
+}
+
+.subscription-btn-large i {
+  font-size: 1.5rem;
+}
+
+/* Style 1: Gradient */
+.subscription-btn-gradient {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+  color: white;
+}
+
+.subscription-btn-gradient:hover:not(:disabled) {
+  background: linear-gradient(135deg, #FF8C42 0%, #FF6B35 100%);
+}
+
+/* Style 2: Pulse */
+.subscription-btn-pulse {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF5722 100%);
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 25px rgba(255, 107, 53, 0.8);
+  }
+}
+
+/* Style 3: Glow */
+.subscription-btn-glow {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+  color: white;
+  position: relative;
+}
+
+.subscription-btn-glow::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+  border-radius: 50px;
+  z-index: -1;
+  filter: blur(10px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.subscription-btn-glow:hover:not(:disabled)::before {
+  opacity: 0.7;
+}
+
+/* Style 4: Minimal */
+.subscription-btn-minimal {
+  background: white;
+  color: #FF6B35;
+  border: 2px solid #FF6B35;
+  box-shadow: none;
+}
+
+.subscription-btn-minimal:hover:not(:disabled) {
+  background: #FF6B35;
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+/* Style 5: Premium */
+.subscription-btn-premium {
+  background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shine {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.subscription-btn-premium:hover:not(:disabled) .btn-shine {
+  transform: translateX(100%);
+}
+
+/* Upgrade Button Variant */
+.upgrade-btn {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF5722 100%) !important;
+  animation: pulse-upgrade 2s infinite;
+}
+
+@keyframes pulse-upgrade {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 25px rgba(255, 107, 53, 0.8);
+  }
+}
+
+/* Active Subscription Button */
+.active-btn {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+}
+
+/* Plan Badge */
+.plan-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ffd700;
+  color: #000;
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .subscription-btn-large {
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
+  }
+  
+  .subscription-btn-medium {
+    padding: 0.625rem 1.5rem;
+    font-size: 0.9375rem;
+  }
+}
+
+/* Loading State */
+.subscription-btn:disabled .btn-content {
+  opacity: 0.7;
+}
+
+/* Icon Animation */
+.subscription-btn i {
+  transition: transform 0.3s ease;
+}
+
+.subscription-btn:hover:not(:disabled) i {
+  transform: scale(1.1);
+}
+
+/* Special Effects for Different States */
+.subscription-btn-gradient.upgrade-btn::after {
+  content: '🚀';
+  position: absolute;
+  right: 10px;
+  animation: rocket 1s infinite;
+}
+
+@keyframes rocket {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}

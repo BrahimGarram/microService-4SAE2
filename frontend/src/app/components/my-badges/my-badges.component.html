@@ -1,0 +1,130 @@
+<div class="my-badges-container">
+  <div class="page-header">
+    <h1><i class="fas fa-award"></i> My Badges & Level</h1>
+    <p class="subtitle">Your badges, level, and earned achievements</p>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading your profile...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading" class="error-container">
+    <i class="fas fa-info-circle"></i>
+    <p>{{ error }}</p>
+    <button class="retry-btn" (click)="loadProfile()">Retry</button>
+  </div>
+
+  <!-- Profile -->
+  <div *ngIf="!loading && !error && profile" class="profile-content">
+
+    <!-- Hero Card -->
+    <div class="hero-card" [ngClass]="getLevelClass(profile.currentLevel)">
+      <div class="hero-icon">
+        <i [ngClass]="getLevelIcon(profile.currentLevel)"></i>
+      </div>
+      <div class="hero-info">
+        <h2>{{ profile.freelancerName }}</h2>
+        <p>{{ profile.freelancerEmail }}</p>
+        <div class="hero-level" *ngIf="profile.currentLevel">
+          <span class="level-badge" [ngClass]="getLevelClass(profile.currentLevel)">
+            <i [ngClass]="getLevelIcon(profile.currentLevel)"></i> {{ profile.currentLevel }}
+          </span>
+          <span class="badge-name-label" *ngIf="profile.currentBadgeName">{{ profile.currentBadgeName }}</span>
+        </div>
+        <div class="hero-level" *ngIf="!profile.currentLevel">
+          <span class="no-level-label">No level yet — complete missions to earn badges!</span>
+        </div>
+      </div>
+      <div class="hero-rank">
+        <div class="rank-number">#{{ profile.rank }}</div>
+        <div class="rank-label">Leaderboard Rank</div>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon missions-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ profile.missionsCompleted }}</div>
+          <div class="stat-label">Missions Completed</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon rating-icon"><i class="fas fa-star"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ profile.averageRating | number:'1.1-1' }}</div>
+          <div class="stat-label">Average Rating</div>
+          <div class="stars">
+            <i class="fas fa-star" *ngFor="let s of getStars(profile.averageRating)"></i>
+            <i class="far fa-star" *ngFor="let s of getEmptyStars(profile.averageRating)"></i>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon badges-icon"><i class="fas fa-award"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ profile.badges.length }}</div>
+          <div class="stat-label">Badges Earned</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon xp-icon"><i class="fas fa-bolt"></i></div>
+        <div class="stat-info">
+          <div class="stat-value">{{ profile.totalXp }} XP</div>
+          <div class="stat-label">Total Points</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- XP Progress Bar -->
+    <div class="progress-section">
+      <div class="progress-header">
+        <span><i class="fas fa-bolt"></i> XP Progress</span>
+        <span class="progress-label">{{ getXpLabel() }}</span>
+      </div>
+      <div class="xp-track">
+        <span class="xp-level-label">{{ profile.currentLevel || 'NONE' }}</span>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" [style.width.%]="getXpProgressPercent()">
+            <span class="xp-inside" *ngIf="getXpProgressPercent() > 15">{{ profile.xpProgress }} / {{ profile.xpForNextLevel - profile.xpForCurrentLevel }} XP</span>
+          </div>
+        </div>
+        <span class="xp-level-label next">{{ profile.nextLevelName }}</span>
+      </div>
+      <div class="xp-formula">
+        <span><i class="fas fa-check-circle"></i> Missions × 10 XP</span>
+        <span><i class="fas fa-star"></i> Rating × 5 XP</span>
+        <span class="xp-total-display">Total: <strong>{{ profile.totalXp }} XP</strong></span>
+      </div>
+    </div>
+
+    <!-- Badges Grid -->
+    <div class="badges-section">
+      <h3><i class="fas fa-award"></i> Earned Badges</h3>
+      <div *ngIf="profile.badges.length === 0" class="no-badges">
+        <i class="fas fa-lock"></i>
+        <p>No badges yet. Complete more missions to unlock badges!</p>
+      </div>
+      <div class="badges-grid" *ngIf="profile.badges.length > 0">
+        <div class="badge-card" *ngFor="let badge of profile.badges">
+          <div class="badge-level-bar" [ngClass]="getLevelClass(badge.level)"></div>
+          <div class="badge-body">
+            <i [ngClass]="getLevelIcon(badge.level)" [class]="'badge-icon ' + getLevelClass(badge.level)"></i>
+            <div class="badge-details">
+              <div class="badge-name">{{ badge.name }}</div>
+              <div class="badge-desc">{{ badge.description }}</div>
+              <span class="level-tag" [ngClass]="getLevelClass(badge.level)">{{ badge.level }}</span>
+              <span class="earned-date" *ngIf="badge.earnedAt">
+                <i class="fas fa-calendar-check"></i> Earned {{ formatDate(badge.earnedAt) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

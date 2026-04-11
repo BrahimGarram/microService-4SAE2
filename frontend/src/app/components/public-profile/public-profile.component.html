@@ -1,0 +1,259 @@
+<div class="public-profile-page">
+  <div class="public-profile-container">
+    
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading profile...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="errorMessage && !loading" class="error-container">
+      <div class="error-card">
+        <i class="fas fa-exclamation-circle"></i>
+        <h2>Profile Not Found</h2>
+        <p>{{ errorMessage }}</p>
+        <button class="btn-back" (click)="routerInstance.navigate(['/'])">
+          <i class="fas fa-arrow-left"></i> Go Back Home
+        </button>
+      </div>
+    </div>
+
+    <!-- Profile Content -->
+    <div *ngIf="user && !loading" class="public-profile-content">
+      
+      <!-- Profile Header Card -->
+      <div class="profile-header-card">
+        <div class="profile-avatar-section">
+          <div class="profile-avatar-container">
+            <div class="profile-avatar" [style.background-image]="user?.profilePicture ? 'url(' + user?.profilePicture + ')' : 'none'">
+              <i *ngIf="!user?.profilePicture" class="fas fa-user-circle"></i>
+            </div>
+          </div>
+          <div class="profile-basic-info">
+            <h1>
+              {{ user.username }}
+              <span *ngIf="user.verified" class="verified-badge" title="Verified Account">
+                <i class="fas fa-check-circle"></i>
+              </span>
+            </h1>
+            <p class="profile-email">{{ user.email }}</p>
+          <div class="profile-meta">
+            <span class="role-badge" [class.role-user]="user.role === 'USER'"
+                  [class.role-freelancer]="user.role === 'FREELANCER'"
+                  [class.role-admin]="user.role === 'ADMIN'">
+              {{ user.role }}
+            </span>
+            <span class="availability-badge" 
+                  [style.color]="getAvailabilityColor(user?.availability)"
+                  [title]="getAvailabilityLabel(user?.availability)">
+              <i class="fas" [ngClass]="getAvailabilityIcon(user?.availability)"></i>
+              {{ getAvailabilityLabel(user?.availability) }}
+            </span>
+            <span *ngIf="user.averageRating && user.averageRating > 0" class="rating-badge">
+              <i class="fas fa-star"></i>
+              {{ user.averageRating | number:'1.1-1' }}
+              <span *ngIf="user.ratingCount">({{ user.ratingCount }})</span>
+            </span>
+          </div>
+        </div>
+        <div class="profile-actions" *ngIf="currentUser && currentUser.id !== user.id">
+          <button class="btn-message" (click)="routerInstance.navigate(['/messages', user.id])">
+            <i class="fas fa-envelope"></i> Send Message
+          </button>
+        </div>
+      </div>
+
+      <!-- Bio Section -->
+      <div class="info-card" *ngIf="user.bio">
+        <h2><i class="fas fa-user"></i> About</h2>
+        <p class="bio-text">{{ user.bio }}</p>
+      </div>
+
+      <!-- Basic Information -->
+      <div class="info-card">
+        <h2><i class="fas fa-info-circle"></i> Information</h2>
+        
+        <div class="info-item" *ngIf="user.city || user.country">
+          <div class="info-icon">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="info-content">
+            <label>Location</label>
+            <p>{{ user.city }}{{ user.city && user.country ? ', ' : '' }}{{ user.country || '' }}</p>
+          </div>
+        </div>
+
+        <div class="info-item" *ngIf="user.timezone">
+          <div class="info-icon">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="info-content">
+            <label>Timezone</label>
+            <p>{{ user.timezone }}</p>
+          </div>
+        </div>
+
+        <div class="info-item" *ngIf="user.hourlyRate && user.role === 'FREELANCER'">
+          <div class="info-icon">
+            <i class="fas fa-dollar-sign"></i>
+          </div>
+          <div class="info-content">
+            <label>Hourly Rate</label>
+            <p>${{ user.hourlyRate | number:'1.2-2' }}/hour</p>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <div class="info-icon">
+            <i class="fas fa-calendar-alt"></i>
+          </div>
+          <div class="info-content">
+            <label>Member Since</label>
+            <p>{{ user.createdAt | date:'MMM d, y' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skills Section -->
+      <div class="info-card" *ngIf="user.skills && user.skills.length > 0">
+        <h2><i class="fas fa-tools"></i> Skills</h2>
+        <div class="skills-list">
+          <div class="skill-tag" *ngFor="let skill of user.skills">
+            <span class="skill-name">{{ skill.name }}</span>
+            <span *ngIf="skill.level" class="skill-level">{{ skill.level }}</span>
+            <span *ngIf="skill.yearsOfExperience" class="skill-experience">{{ skill.yearsOfExperience }} years</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portfolio Section -->
+      <div class="info-card" *ngIf="user.portfolioItems && user.portfolioItems.length > 0">
+        <h2><i class="fas fa-briefcase"></i> Portfolio</h2>
+        <div class="portfolio-grid">
+          <div class="portfolio-item" *ngFor="let item of user.portfolioItems">
+            <div class="portfolio-image" *ngIf="item.imageUrl" [style.background-image]="'url(' + item.imageUrl + ')'">
+              <i *ngIf="!item.imageUrl" class="fas fa-image"></i>
+            </div>
+            <div class="portfolio-content">
+              <h3>{{ item.title }}</h3>
+              <p *ngIf="item.description">{{ item.description }}</p>
+              <div class="portfolio-tech" *ngIf="item.technologies">
+                <span class="tech-tag" *ngFor="let tech of item.technologies.split(',')">{{ tech.trim() }}</span>
+              </div>
+              <a *ngIf="item.url" [href]="item.url" target="_blank" class="portfolio-link">
+                <i class="fas fa-external-link-alt"></i> View Project
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Languages Section -->
+      <div class="info-card" *ngIf="user.languages && user.languages.length > 0">
+        <h2><i class="fas fa-language"></i> Languages</h2>
+        <div class="languages-list">
+          <div class="language-item" *ngFor="let lang of user.languages">
+            <span class="language-name">{{ lang.name }}</span>
+            <span *ngIf="lang.proficiency" class="language-proficiency">{{ lang.proficiency }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Social Links Section -->
+      <div class="info-card" *ngIf="user.socialLinks && user.socialLinks.length > 0">
+        <h2><i class="fas fa-share-alt"></i> Social Links</h2>
+        <div class="social-links-list">
+          <a *ngFor="let link of user.socialLinks" [href]="link.url" target="_blank" class="social-link-item">
+            <i class="fab" [ngClass]="'fa-' + link.platform.toLowerCase()"></i>
+            <span>{{ link.platform }}</span>
+            <i class="fas fa-external-link-alt"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Ratings Section -->
+      <div class="info-card">
+        <div class="ratings-header">
+          <h2>
+            <i class="fas fa-star"></i> Ratings & Reviews
+            <span *ngIf="user.averageRating && user.averageRating > 0" class="average-rating">
+              {{ user.averageRating | number:'1.1-1' }} 
+              <i class="fas fa-star"></i>
+              <span *ngIf="user.ratingCount">({{ user.ratingCount }} {{ user.ratingCount === 1 ? 'review' : 'reviews' }})</span>
+            </span>
+          </h2>
+          <button *ngIf="currentUser && currentUser.id !== user.id && !hasRated && !showRatingForm" 
+                  class="btn-rate" 
+                  (click)="showRatingForm = true">
+            <i class="fas fa-star"></i> Rate This User
+          </button>
+          <button *ngIf="showRatingForm" 
+                  class="btn-cancel-rate" 
+                  (click)="showRatingForm = false">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+        </div>
+
+        <!-- Rating Form -->
+        <div *ngIf="showRatingForm" class="rating-form">
+          <div class="form-group">
+            <label>Rating (1-5 stars)</label>
+            <div class="star-rating-input">
+              <span *ngFor="let star of [1,2,3,4,5]" 
+                    class="star" 
+                    [class.active]="star <= newRating.rating"
+                    (click)="newRating.rating = star">
+                <i class="fas fa-star"></i>
+              </span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Comment (optional)</label>
+            <textarea [(ngModel)]="newRating.comment" 
+                      placeholder="Write a review..."
+                      rows="4"></textarea>
+          </div>
+          <button class="btn-submit-rating" (click)="submitRating()">
+            <i class="fas fa-check"></i> Submit Rating
+          </button>
+        </div>
+
+        <!-- Ratings List -->
+        <div *ngIf="loadingRatings" class="loading-ratings">
+          <p>Loading ratings...</p>
+        </div>
+        <div *ngIf="!loadingRatings && ratings.length === 0" class="no-ratings">
+          <p>No ratings yet. Be the first to rate this user!</p>
+        </div>
+        <div *ngIf="!loadingRatings && ratings.length > 0" class="ratings-list">
+          <div class="rating-item" *ngFor="let rating of ratings">
+            <div class="rating-header">
+              <div class="rater-info">
+                <strong>{{ rating.raterUsername }}</strong>
+                <div class="rating-stars">
+                  <span *ngFor="let star of [1,2,3,4,5]" 
+                        class="star" 
+                        [class.active]="star <= rating.rating">
+                    <i class="fas fa-star"></i>
+                  </span>
+                </div>
+              </div>
+              <div class="rating-date">
+                {{ rating.createdAt | date:'MMM d, y' }}
+                <button *ngIf="currentUser && currentUser.id === rating.raterId" 
+                        class="btn-delete-rating" 
+                        (click)="deleteRating(rating.id!)"
+                        title="Delete your rating">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            <p *ngIf="rating.comment" class="rating-comment">{{ rating.comment }}</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

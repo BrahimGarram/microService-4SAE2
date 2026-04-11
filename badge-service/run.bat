@@ -1,0 +1,3 @@
+@echo off
+echo Starting Badge Service on port 8085...
+mvn spring-boot:run

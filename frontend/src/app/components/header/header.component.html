@@ -1,0 +1,86 @@
+<header class="top-header">
+  <div class="header-left">
+    <h1>{{ title }}</h1>
+  </div>
+  <div class="header-right">
+    <!-- Search -->
+    <div class="header-search" [class.active]="showSearch">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="Search..." (focus)="showSearch = true" (blur)="hideSearch()">
+    </div>
+
+    <!-- Theme Toggle -->
+    <button class="header-icon-btn" (click)="toggleTheme()" title="Toggle theme">
+      <i class="fas" [class.fa-moon]="!isDarkMode" [class.fa-sun]="isDarkMode"></i>
+    </button>
+
+    <!-- Notifications -->
+    <div class="notification-wrapper">
+      <button class="header-icon-btn" (click)="toggleNotifications()" title="Notifications">
+        <i class="fas fa-bell"></i>
+        <span class="notification-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+      </button>
+      <div class="notification-dropdown" *ngIf="showNotifications">
+        <div class="dropdown-header">
+          <h3>Notifications</h3>
+          <button class="mark-all-read" (click)="markAllAsRead()" *ngIf="unreadCount > 0">Mark all as read</button>
+        </div>
+        <div class="notification-list">
+          <div 
+            *ngFor="let notif of notifications" 
+            class="notification-item" 
+            [class.unread]="!notif.read"
+            (click)="markAsRead(notif.id)">
+            <div class="notification-icon" [class]="'icon-' + notif.type">
+              <i class="fas" [class.fa-user]="notif.type === 'user'" [class.fa-briefcase]="notif.type === 'project'" [class.fa-dollar-sign]="notif.type === 'payment'"></i>
+            </div>
+            <div class="notification-content">
+              <p>{{ notif.message }}</p>
+              <span>{{ notif.time }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="dropdown-footer">
+          <a href="#">View all notifications</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Menu -->
+    <div class="profile-wrapper">
+      <div class="user-info" (click)="toggleProfileMenu()">
+        <div class="user-avatar">
+          <i class="fas fa-user"></i>
+        </div>
+        <span>Admin</span>
+        <i class="fas fa-chevron-down"></i>
+      </div>
+      <div class="profile-dropdown" *ngIf="showProfileMenu">
+        <div class="profile-header">
+          <div class="user-avatar-large">
+            <i class="fas fa-user"></i>
+          </div>
+          <div>
+            <h4>Admin User</h4>
+            <p>admin&#64;freelancify.com</p>
+          </div>
+        </div>
+        <div class="dropdown-menu">
+          <a routerLink="/admin/profile" class="menu-item" (click)="showProfileMenu = false">
+            <i class="fas fa-user"></i> Profile
+          </a>
+          <a href="#" class="menu-item">
+            <i class="fas fa-cog"></i> Settings
+          </a>
+          <a href="#" class="menu-item">
+            <i class="fas fa-question-circle"></i> Help
+          </a>
+          <div class="menu-divider"></div>
+          <a href="#" class="menu-item" (click)="logout(); $event.preventDefault()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

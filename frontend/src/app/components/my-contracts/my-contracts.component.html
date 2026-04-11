@@ -1,0 +1,537 @@
+<div class="contracts-page">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1><i class="fas fa-file-contract"></i> Contracts</h1>
+      <p *ngIf="userRole === 'FREELANCER'">Manage your contracts and create new ones for clients</p>
+      <p *ngIf="userRole !== 'FREELANCER'">Browse available contracts, sign and pay securely</p>
+    </div>
+    <button *ngIf="userRole === 'FREELANCER'" class="btn-primary" (click)="openCreateModal()">
+      <i class="fas fa-plus"></i> New Contract
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="Search by title, freelancer, client..."
+        [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()">
+    </div>
+    <div class="filter-group">
+      <label>Status:</label>
+      <select [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()">
+        <option value="ALL">All</option>
+        <option *ngFor="let s of contractStatuses" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <i class="fas fa-spinner fa-spin"></i>
+    <p>Loading contracts...</p>
+  </div>
+
+  <!-- Empty -->
+  <div *ngIf="!loading && filteredContracts.length === 0" class="empty-state">
+    <i class="fas fa-file-contract"></i>
+    <h3>No contracts found</h3>
+    <p *ngIf="userRole === 'FREELANCER'">Create your first contract to get started</p>
+    <p *ngIf="userRole !== 'FREELANCER'">No contracts are available at the moment</p>
+  </div>
+
+  <!-- Contracts Grid -->
+  <div *ngIf="!loading && filteredContracts.length > 0" class="contracts-grid">
+    <div class="contract-card" *ngFor="let contract of filteredContracts">
+      <div class="card-header">
+        <span class="contract-id">#{{ contract.idContract }}</span>
+        <span class="status-badge" [ngClass]="getStatusClass(contract.status)">{{ contract.status }}</span>
+      </div>
+
+      <div class="card-body">
+        <h3 class="contract-title">{{ contract.contractTitle }}</h3>
+        <p class="contract-desc">{{ contract.projectDescription || 'No description provided' }}</p>
+
+        <div class="contract-meta">
+          <div class="meta-item">
+            <i class="fas fa-user-tie"></i>
+            <div>
+              <span class="meta-label">Freelancer</span>
+              <span class="meta-value">{{ contract.freelancerName }}</span>
+            </div>
+          </div>
+          <div class="meta-item">
+            <i class="fas fa-building"></i>
+            <div>
+              <span class="meta-label">Client</span>
+              <span class="meta-value">{{ contract.clientName }}</span>
+            </div>
+          </div>
+          <div class="meta-item">
+            <i class="fas fa-calendar-alt"></i>
+            <div>
+              <span class="meta-label">Duration</span>
+              <span class="meta-value">{{ contract.startDate | date:'mediumDate' }} → {{ contract.endDate | date:'mediumDate' }}</span>
+            </div>
+          </div>
+          <div class="meta-item">
+            <i class="fas fa-tag"></i>
+            <div>
+              <span class="meta-label">Payment Type</span>
+              <span class="meta-value">{{ contract.paymentType }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div class="amount">
+          <span class="amount-value">{{ contract.contractAmount | number:'1.2-2' }}</span>
+          <span class="amount-currency">{{ contract.currency || 'USD' }}</span>
+        </div>
+        <div class="card-actions" *ngIf="userRole !== 'FREELANCER'">
+          <button class="btn-sign" (click)="openSignModal(contract)"
+            [disabled]="contract.status === 'CANCELLED' || contract.status === 'EXPIRED'">
+            <i class="fas fa-signature"></i> Sign
+          </button>
+          <button class="btn-pay" (click)="openPayModal(contract)"
+            [disabled]="contract.status === 'CANCELLED' || contract.status === 'EXPIRED'">
+            <i class="fas fa-credit-card"></i> Pay
+          </button>
+        </div>
+        <div class="card-actions" *ngIf="userRole === 'FREELANCER'">
+          <span class="freelancer-badge"><i class="fas fa-check-circle"></i> Your Contract</span>
+          <button class="btn-action btn-complete-sm" *ngIf="contract.status === 'ACTIVE'"
+            (click)="completeContract(contract)" title="Mark as Completed">
+            <i class="fas fa-check-double"></i>
+          </button>
+          <button class="btn-action btn-dispute-sm" *ngIf="contract.status === 'ACTIVE'"
+            (click)="openDisputeModal(contract)" title="Raise Dispute">
+            <i class="fas fa-exclamation-triangle"></i>
+          </button>
+          <button class="btn-action btn-renew-sm" *ngIf="contract.status === 'ACTIVE' || contract.status === 'EXPIRED'"
+            (click)="openRenewModal(contract)" title="Renew">
+            <i class="fas fa-redo"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Freelancer: Create Contract Modal ─────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showCreateModal" (click)="showCreateModal = false">
+  <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><i class="fas fa-plus-circle"></i> New Contract</h2>
+      <button class="btn-close" (click)="showCreateModal = false"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <form>
+        <div class="form-section">
+          <h3><i class="fas fa-file-signature"></i> Contract Info</h3>
+          <div class="form-row">
+            <div class="form-group" [class.has-error]="errors['contractTitle']">
+              <label>Title *</label>
+              <input type="text" [(ngModel)]="newContract.contractTitle" name="title" placeholder="e.g. Website Development">
+              <span class="field-error" *ngIf="errors['contractTitle']"><i class="fas fa-exclamation-circle"></i> {{ errors['contractTitle'] }}</span>
+            </div>
+            <div class="form-group">
+              <label>Contract Type</label>
+              <select [(ngModel)]="newContract.contractType" name="contractType">
+                <option *ngFor="let t of contractTypes" [value]="t">{{ t }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Project Description</label>
+            <textarea [(ngModel)]="newContract.projectDescription" name="desc" rows="3" placeholder="Describe the project..."></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-building"></i> Client Details</h3>
+          <div class="form-row">
+            <div class="form-group" [class.has-error]="errors['clientName']">
+              <label>Client Name *</label>
+              <input type="text" [(ngModel)]="newContract.clientName" name="clientName" placeholder="Client full name">
+              <span class="field-error" *ngIf="errors['clientName']"><i class="fas fa-exclamation-circle"></i> {{ errors['clientName'] }}</span>
+            </div>
+            <div class="form-group" [class.has-error]="errors['clientEmail']">
+              <label>Client Email *</label>
+              <input type="email" [(ngModel)]="newContract.clientEmail" name="clientEmail" placeholder="client@example.com">
+              <span class="field-error" *ngIf="errors['clientEmail']"><i class="fas fa-exclamation-circle"></i> {{ errors['clientEmail'] }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-calendar-alt"></i> Timeline & Payment</h3>
+          <div class="form-row">
+            <div class="form-group" [class.has-error]="errors['startDate']">
+              <label>Start Date *</label>
+              <input type="date" [(ngModel)]="newContract.startDate" name="startDate">
+              <span class="field-error" *ngIf="errors['startDate']"><i class="fas fa-exclamation-circle"></i> {{ errors['startDate'] }}</span>
+            </div>
+            <div class="form-group" [class.has-error]="errors['endDate']">
+              <label>End Date *</label>
+              <input type="date" [(ngModel)]="newContract.endDate" name="endDate">
+              <span class="field-error" *ngIf="errors['endDate']"><i class="fas fa-exclamation-circle"></i> {{ errors['endDate'] }}</span>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" [class.has-error]="errors['contractAmount']">
+              <label>Amount *</label>
+              <input type="number" [(ngModel)]="newContract.contractAmount" name="amount" min="0" step="0.01">
+              <span class="field-error" *ngIf="errors['contractAmount']"><i class="fas fa-exclamation-circle"></i> {{ errors['contractAmount'] }}</span>
+            </div>
+            <div class="form-group">
+              <label>Currency</label>
+              <select [(ngModel)]="newContract.currency" name="currency">
+                <option *ngFor="let c of currencies" [value]="c">{{ c }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Payment Type</label>
+              <select [(ngModel)]="newContract.paymentType" name="paymentType">
+                <option *ngFor="let p of paymentTypes" [value]="p">{{ p }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-tasks"></i> Terms</h3>
+          <div class="form-group">
+            <label>Deliverables</label>
+            <textarea [(ngModel)]="newContract.deliverables" name="deliverables" rows="2" placeholder="List deliverables..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Terms & Conditions</label>
+            <textarea [(ngModel)]="newContract.termsAndConditions" name="terms" rows="2" placeholder="Terms and conditions..."></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showCreateModal = false">Cancel</button>
+      <button class="btn-primary" (click)="submitContract()"><i class="fas fa-paper-plane"></i> Submit Contract</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Client: Sign Modal ────────────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showSignModal" (click)="showSignModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header sign-header">
+      <h2><i class="fas fa-signature"></i> Sign Contract</h2>
+      <button class="btn-close" (click)="showSignModal = false"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" *ngIf="contractToSign">
+      <div class="sign-info-box">
+        <p><strong>Contract:</strong> {{ contractToSign.contractTitle }}</p>
+        <p><strong>Amount:</strong> {{ contractToSign.contractAmount | number:'1.2-2' }} {{ contractToSign.currency }}</p>
+        <p><strong>Freelancer:</strong> {{ contractToSign.freelancerName }}</p>
+      </div>
+
+      <div class="signature-area">
+        <p class="sig-label">Your Signature</p>
+        <div class="sig-preview" *ngIf="clientSignature">
+          <img [src]="clientSignature" alt="Your signature">
+          <button class="btn-clear-sig" (click)="clientSignature = ''"><i class="fas fa-redo"></i> Redo</button>
+        </div>
+        <button *ngIf="!clientSignature" class="btn-sign-pad" (click)="openSignaturePad()">
+          <i class="fas fa-pen-nib"></i> Draw Signature
+        </button>
+      </div>
+
+      <p class="sign-disclaimer">
+        <i class="fas fa-info-circle"></i>
+        By signing, you agree to the terms and conditions of this contract. A signed PDF will be downloaded.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showSignModal = false">Cancel</button>
+      <button class="btn-primary" (click)="confirmSign()" [disabled]="!clientSignature">
+        <i class="fas fa-check"></i> Confirm & Download PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Client: Pay Modal ─────────────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showPayModal" (click)="showPayModal = false">
+  <div class="modal-content modal-pay" (click)="$event.stopPropagation()">
+    <div class="modal-header pay-header">
+      <h2><i class="fas fa-lock"></i> Secure Payment</h2>
+      <button class="btn-close" (click)="showPayModal = false"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="modal-body" *ngIf="contractToPay">
+
+      <!-- Order Summary -->
+      <div class="pay-summary">
+        <div class="pay-row"><span>Contract</span><strong>{{ contractToPay.contractTitle }}</strong></div>
+        <div class="pay-row"><span>Freelancer</span><strong>{{ contractToPay.freelancerName }}</strong></div>
+        <div class="pay-row total">
+          <span>Total</span>
+          <strong class="pay-amount">{{ contractToPay.contractAmount | number:'1.2-2' }} {{ contractToPay.currency }}</strong>
+        </div>
+      </div>
+
+      <!-- Payment Method Selector -->
+      <div class="method-selector">
+        <button class="method-tab" [class.active]="paymentMethod === 'Credit Card'" (click)="paymentMethod = 'Credit Card'">
+          <i class="fas fa-credit-card"></i> Credit Card
+        </button>
+        <button class="method-tab" [class.active]="paymentMethod === 'Bank Transfer'" (click)="paymentMethod = 'Bank Transfer'">
+          <i class="fas fa-university"></i> Bank Transfer
+        </button>
+      </div>
+
+      <!-- ── Credit Card Form ── -->
+      <div *ngIf="paymentMethod === 'Credit Card'" class="payment-form">
+        <div class="card-visual">
+          <div class="card-chip"><i class="fas fa-microchip"></i></div>
+          <div class="card-number-display">{{ cardNumber || '•••• •••• •••• ••••' }}</div>
+          <div class="card-bottom">
+            <div>
+              <div class="card-label">Card Holder</div>
+              <div class="card-value">{{ cardHolder || 'YOUR NAME' }}</div>
+            </div>
+            <div>
+              <div class="card-label">Expires</div>
+              <div class="card-value">{{ cardExpiry || 'MM/YY' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Card Number *</label>
+          <div class="input-icon-wrap">
+            <i class="fas fa-credit-card"></i>
+            <input type="text" [(ngModel)]="cardNumber" name="cardNumber"
+              placeholder="1234 5678 9012 3456" [maxlength]="isAmexCard() ? 17 : 19"
+              (input)="formatCardNumber($event)"
+              [class.input-error]="cardErrors['cardNumber']">
+          </div>
+          <span class="field-error" *ngIf="cardErrors['cardNumber']">
+            <i class="fas fa-exclamation-circle"></i> {{ cardErrors['cardNumber'] }}
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label>Card Holder Name *</label>
+          <div class="input-icon-wrap">
+            <i class="fas fa-user"></i>
+            <input type="text" [(ngModel)]="cardHolder" name="cardHolder"
+              placeholder="John Doe"
+              [class.input-error]="cardErrors['cardHolder']">
+          </div>
+          <span class="field-error" *ngIf="cardErrors['cardHolder']">
+            <i class="fas fa-exclamation-circle"></i> {{ cardErrors['cardHolder'] }}
+          </span>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Expiry Date *</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-calendar"></i>
+              <input type="text" [(ngModel)]="cardExpiry" name="cardExpiry"
+                placeholder="MM/YY" maxlength="5"
+                (input)="formatExpiry($event)"
+                [class.input-error]="cardErrors['cardExpiry']">
+            </div>
+            <span class="field-error" *ngIf="cardErrors['cardExpiry']">
+              <i class="fas fa-exclamation-circle"></i> {{ cardErrors['cardExpiry'] }}
+            </span>
+          </div>
+          <div class="form-group">
+            <label>CVV *</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-lock"></i>
+              <input type="password" [(ngModel)]="cardCvv" name="cardCvv"
+                placeholder="•••" [maxlength]="isAmexCard() ? 4 : 3"
+                [class.input-error]="cardErrors['cardCvv']">
+            </div>
+            <span class="field-error" *ngIf="cardErrors['cardCvv']">
+              <i class="fas fa-exclamation-circle"></i> {{ cardErrors['cardCvv'] }}
+            </span>
+          </div>
+        </div>
+
+        <div class="test-cards-hint">
+          <i class="fas fa-info-circle"></i>
+          <span>Test card: <code>4242 4242 4242 4242</code> · Any future date · Any CVV</span>
+        </div>
+
+        <!-- Stripe Test Cards Selector -->
+        <div class="test-cards-panel">
+          <div class="test-cards-title" (click)="showTestCards = !showTestCards">
+            <i class="fas fa-flask"></i> Stripe Test Cards
+            <i class="fas" [ngClass]="showTestCards ? 'fa-chevron-up' : 'fa-chevron-down'" style="margin-left:auto"></i>
+          </div>
+          <div class="test-cards-list" *ngIf="showTestCards">
+            <div class="test-card-item" *ngFor="let tc of stripeTestCards" (click)="applyTestCard(tc)">
+              <div class="tc-brand">
+                <i class="fab" [ngClass]="tc.icon"></i> {{ tc.brand }}
+              </div>
+              <div class="tc-number">{{ tc.number }}</div>
+              <div class="tc-desc" [ngClass]="tc.type">{{ tc.description }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Bank Transfer Form ── -->
+      <div *ngIf="paymentMethod === 'Bank Transfer'" class="payment-form">
+        <div class="bank-info-box">
+          <i class="fas fa-university"></i>
+          <div>
+            <p>Transfer the exact amount to the account below and include your contract ID as reference.</p>
+          </div>
+        </div>
+
+        <div class="bank-details">
+          <div class="bank-detail-row">
+            <span class="bank-label">Bank Name</span>
+            <span class="bank-value">Freelancify Bank</span>
+          </div>
+          <div class="bank-detail-row">
+            <span class="bank-label">Account Name</span>
+            <span class="bank-value">Freelancify Platform</span>
+          </div>
+          <div class="bank-detail-row">
+            <span class="bank-label">IBAN</span>
+            <span class="bank-value copyable" (click)="copyToClipboard('TN59 1000 6035 1835 9847 8831')">
+              TN59 1000 6035 1835 9847 8831 <i class="fas fa-copy"></i>
+            </span>
+          </div>
+          <div class="bank-detail-row">
+            <span class="bank-label">BIC/SWIFT</span>
+            <span class="bank-value">BIATTNTT</span>
+          </div>
+          <div class="bank-detail-row highlight">
+            <span class="bank-label">Amount</span>
+            <span class="bank-value amount-highlight">{{ contractToPay.contractAmount | number:'1.2-2' }} {{ contractToPay.currency }}</span>
+          </div>
+          <div class="bank-detail-row highlight">
+            <span class="bank-label">Reference</span>
+            <span class="bank-value copyable" (click)="copyToClipboard('CONTRACT-' + contractToPay.idContract)">
+              CONTRACT-{{ contractToPay.idContract }} <i class="fas fa-copy"></i>
+            </span>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 1.2rem;">
+          <label>Your Full Name *</label>
+          <div class="input-icon-wrap">
+            <i class="fas fa-user"></i>
+            <input type="text" [(ngModel)]="bankSenderName" name="bankSenderName"
+              placeholder="Name as it appears on your bank account"
+              [class.input-error]="cardErrors['bankSenderName']">
+          </div>
+          <span class="field-error" *ngIf="cardErrors['bankSenderName']">
+            <i class="fas fa-exclamation-circle"></i> {{ cardErrors['bankSenderName'] }}
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label>Transfer Date *</label>
+          <div class="input-icon-wrap">
+            <i class="fas fa-calendar-alt"></i>
+            <input type="date" [(ngModel)]="bankTransferDate" name="bankTransferDate"
+              [class.input-error]="cardErrors['bankTransferDate']">
+          </div>
+          <span class="field-error" *ngIf="cardErrors['bankTransferDate']">
+            <i class="fas fa-exclamation-circle"></i> {{ cardErrors['bankTransferDate'] }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Security Badge -->
+      <div class="security-badge">
+        <i class="fas fa-shield-alt"></i>
+        <span>256-bit SSL encrypted · Powered by Stripe</span>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showPayModal = false">Cancel</button>
+      <button class="btn-pay-confirm" (click)="confirmPayment()" [disabled]="paymentProcessing">
+        <i class="fas fa-spinner fa-spin" *ngIf="paymentProcessing"></i>
+        <i class="fas fa-lock" *ngIf="!paymentProcessing"></i>
+        {{ paymentProcessing ? 'Processing...' : 'Pay ' + (contractToPay?.contractAmount | number:'1.2-2') + ' ' + (contractToPay?.currency || 'USD') }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Signature Pad Modal -->
+<app-signature-modal
+  *ngIf="showSignatureModal"
+  [signerName]="currentSignerName"
+  signerRole="Client"
+  (signatureSaved)="onSignatureSaved($event)"
+  (modalClosed)="onSignatureModalClosed()">
+</app-signature-modal>
+
+<!-- ─── Dispute Modal (Frontoffice) ──────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showDisputeModal" (click)="showDisputeModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header" style="background:linear-gradient(135deg,#e53e3e,#c53030);border-radius:20px 20px 0 0;">
+      <h2 style="color:white"><i class="fas fa-exclamation-triangle"></i> Raise Dispute</h2>
+      <button class="btn-close" style="color:white;background:rgba(255,255,255,0.2)" (click)="showDisputeModal = false"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Reason *</label>
+        <input type="text" [(ngModel)]="disputeForm.reason" name="reason" placeholder="e.g. Late delivery, Payment issue...">
+      </div>
+      <div class="form-group">
+        <label>Description *</label>
+        <textarea [(ngModel)]="disputeForm.description" name="description" rows="3" placeholder="Describe the dispute..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showDisputeModal = false">Cancel</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#e53e3e,#c53030)" (click)="submitDispute()">
+        <i class="fas fa-exclamation-triangle"></i> Submit Dispute
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Renew Modal (Frontoffice) ─────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showRenewModal" (click)="showRenewModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header" style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:20px 20px 0 0;">
+      <h2 style="color:white"><i class="fas fa-redo"></i> Renew Contract</h2>
+      <button class="btn-close" style="color:white;background:rgba(255,255,255,0.2)" (click)="showRenewModal = false"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>New End Date *</label>
+        <input type="date" [(ngModel)]="renewForm.newEndDate" name="newEndDate">
+      </div>
+      <div class="form-group">
+        <label>New Amount (optional)</label>
+        <input type="number" [(ngModel)]="renewForm.newAmount" name="newAmount" min="0" step="0.01" placeholder="Leave empty to keep current">
+      </div>
+      <div class="form-group">
+        <label>Renewal Note</label>
+        <textarea [(ngModel)]="renewForm.renewalNote" name="renewalNote" rows="2" placeholder="Optional note..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showRenewModal = false">Cancel</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#667eea,#764ba2)" (click)="submitRenew()">
+        <i class="fas fa-redo"></i> Renew
+      </button>
+    </div>
+  </div>
+</div>

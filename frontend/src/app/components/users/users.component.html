@@ -1,0 +1,70 @@
+<div class="card">
+  <h1>Users Management</h1>
+  <p>List of all users in the system (Admin only)</p>
+</div>
+
+<div *ngIf="!isAdmin" class="card">
+  <div class="alert alert-error">
+    <h2>Access Denied</h2>
+    <p>You need ADMIN role to access this page.</p>
+  </div>
+</div>
+
+<div *ngIf="isAdmin">
+  <div *ngIf="error" class="alert alert-error">
+    {{ error }}
+  </div>
+  
+  <div *ngIf="loading" class="card">
+    <p>Loading users...</p>
+  </div>
+  
+  <div *ngIf="!loading && users.length === 0" class="card">
+    <p>No users found.</p>
+  </div>
+  
+  <div *ngIf="!loading && users.length > 0" class="card">
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Created At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of users">
+          <td>{{ user.id }}</td>
+          <td>
+            <a [routerLink]="['/user', user.id]" class="username-link">
+              {{ user.username }}
+            </a>
+          </td>
+          <td>{{ user.email }}</td>
+          <td>
+            <span class="role-badge" [class.role-user]="user.role === 'USER'"
+                  [class.role-freelancer]="user.role === 'FREELANCER'"
+                  [class.role-admin]="user.role === 'ADMIN'">
+              {{ user.role }}
+            </span>
+          </td>
+          <td>{{ user.createdAt | date:'short' }}</td>
+          <td>
+            <button class="btn btn-danger btn-sm" 
+                    (click)="deleteUser(user.id, user.username)"
+                    title="Delete user">
+              Delete
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="users-summary">
+      <p><strong>Total users:</strong> {{ users.length }}</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,330 @@
+<div class="subscription-plans-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Choose Your Perfect Plan</h1>
+    <p class="subtitle">
+      Select the plan that best fits your freelancing needs
+    </p>
+    
+    <!-- Billing Toggle -->
+    <div class="billing-toggle">
+      <span class="toggle-label" [class.active]="billingCycle === 'MONTHLY'">Monthly</span>
+      <label class="switch">
+        <input type="checkbox" 
+               [(ngModel)]="isYearly" 
+               (change)="toggleBillingCycle()">
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label" [class.active]="billingCycle === 'YEARLY'">Yearly</span>
+      <span class="save-badge" *ngIf="isYearly">Save 20% annually</span>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading plans...</p>
+  </div>
+
+  <!-- Plans Grid -->
+  <div *ngIf="!loading && plans.length > 0" class="plans-grid-modern">
+    <div *ngFor="let plan of plans; let i = index" 
+         class="plan-card-modern"
+         [class.featured]="plan.planName === 'PRO'">
+      
+      <!-- Featured Badge -->
+      <div *ngIf="plan.planName === 'PRO'" class="featured-badge">
+        Most Popular
+      </div>
+
+      <!-- Current Plan Badge -->
+      <div *ngIf="isCurrentPlan(plan)" class="current-badge">
+        <i class="fas fa-check-circle"></i> Current Plan
+      </div>
+
+      <!-- Plan Name -->
+      <h3 class="plan-name-modern">{{ plan.planName }}</h3>
+
+      <!-- Price -->
+      <div class="price-section">
+        <div class="price-amount-modern">
+          <span class="currency" *ngIf="plan.price > 0">$</span>
+          <span class="amount">{{ getDisplayPrice(plan) }}</span>
+          <span class="period" *ngIf="plan.price > 0">
+            <span class="per">per user</span>
+            <span class="cycle">per {{ billingCycle === 'YEARLY' ? 'year' : 'month' }}</span>
+          </span>
+          <span class="free-text" *ngIf="plan.price === 0">Forever Free</span>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <p class="plan-description-modern">
+        {{ getPlanDescription(plan.planName) }}
+      </p>
+
+      <!-- Features List -->
+      <ul class="features-list-modern">
+        <li>
+          <i class="fas fa-check"></i>
+          <span><strong>{{ plan.maxBidsPerMonth === 999999 ? 'Unlimited' : plan.maxBidsPerMonth }}</strong> bids per month</span>
+        </li>
+        <li>
+          <i class="fas fa-check"></i>
+          <span><strong>{{ plan.maxProjects === 999999 ? 'Unlimited' : plan.maxProjects }}</strong> active projects</span>
+        </li>
+        <li>
+          <i class="fas fa-check"></i>
+          <span><strong>{{ plan.commissionRate }}%</strong> commission rate</span>
+        </li>
+        <li *ngIf="plan.hasAnalyticsAccess">
+          <i class="fas fa-check"></i>
+          <span>Analytics dashboard</span>
+        </li>
+        <li *ngIf="plan.hasProfileBoost">
+          <i class="fas fa-check"></i>
+          <span>Profile boost</span>
+        </li>
+        <li *ngIf="plan.hasPrioritySupport">
+          <i class="fas fa-check"></i>
+          <span>Priority support</span>
+        </li>
+        <li *ngIf="plan.hasFeaturedListing">
+          <i class="fas fa-check"></i>
+          <span>Featured listing</span>
+        </li>
+        <li *ngIf="plan.planName === 'FREE'">
+          <i class="fas fa-check"></i>
+          <span>Great for teams under 20</span>
+        </li>
+        <li *ngIf="plan.planName === 'BASIC'">
+          <i class="fas fa-check"></i>
+          <span>Advanced user management</span>
+        </li>
+        <li *ngIf="plan.planName === 'PRO'">
+          <i class="fas fa-check"></i>
+          <span>Channel-wide analytics</span>
+        </li>
+        <li *ngIf="plan.planName === 'ENTERPRISE'">
+          <i class="fas fa-check"></i>
+          <span>Dedicated Account Executive</span>
+        </li>
+        <li *ngIf="plan.planName === 'ENTERPRISE'">
+          <i class="fas fa-check"></i>
+          <span>White-glove onboarding</span>
+        </li>
+      </ul>
+
+      <!-- Subscribe Button (Not shown for FREE plan) -->
+      <button 
+        *ngIf="plan.price > 0"
+        class="btn-subscribe-modern"
+        [class.current]="isCurrentPlan(plan)"
+        [disabled]="isCurrentPlan(plan) || subscribing"
+        (click)="subscribe(plan)">
+        <span *ngIf="!subscribing">
+          {{ getButtonText(plan) }}
+        </span>
+        <span *ngIf="subscribing">
+          <i class="fas fa-spinner fa-spin"></i>
+          Processing...
+        </span>
+      </button>
+
+      <!-- FREE Plan Message -->
+      <div *ngIf="plan.price === 0" class="free-plan-message">
+        <i class="fas fa-check-circle"></i>
+        <span *ngIf="!isCurrentPlan(plan)">Available to all users</span>
+        <span *ngIf="isCurrentPlan(plan)">Your current plan</span>
+      </div>
+
+      <!-- Trial Info -->
+      <p class="trial-info" *ngIf="plan.price > 0 && !isCurrentPlan(plan)">
+        Comes with a 14-day trial
+      </p>
+      <p class="trial-info" *ngIf="plan.planName === 'ENTERPRISE'">
+        Always happy to chat!
+      </p>
+      <p class="current-plan-text" *ngIf="isCurrentPlan(plan) && plan.price > 0">
+        <i class="fas fa-check-circle"></i>
+        You are currently on this plan
+      </p>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && plans.length === 0" class="empty-state">
+    <i class="fas fa-inbox"></i>
+    <h3>No Plans Available</h3>
+    <p>Check back soon for exciting subscription options!</p>
+  </div>
+
+  <!-- Features Comparison Section -->
+  <div *ngIf="!loading && plans.length > 0" class="comparison-section-modern">
+    <h2>Compare All Features</h2>
+    <p class="comparison-subtitle">Choose the plan that's right for you</p>
+    
+    <div class="comparison-table-wrapper">
+      <table class="comparison-table-modern">
+        <thead>
+          <tr>
+            <th class="feature-column">Features</th>
+            <th *ngFor="let plan of plans" class="plan-column">
+              {{ plan.planName }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="feature-name">Monthly Bids</td>
+            <td *ngFor="let plan of plans" class="feature-value">
+              {{ plan.maxBidsPerMonth === 999999 ? 'Unlimited' : plan.maxBidsPerMonth }}
+            </td>
+          </tr>
+          <tr>
+            <td class="feature-name">Active Projects</td>
+            <td *ngFor="let plan of plans" class="feature-value">
+              {{ plan.maxProjects === 999999 ? 'Unlimited' : plan.maxProjects }}
+            </td>
+          </tr>
+          <tr>
+            <td class="feature-name">Commission Rate</td>
+            <td *ngFor="let plan of plans" class="feature-value">
+              {{ plan.commissionRate }}%
+            </td>
+          </tr>
+          <tr>
+            <td class="feature-name">Analytics Dashboard</td>
+            <td *ngFor="let plan of plans" class="feature-value">
+              <i class="fas" [ngClass]="plan.hasAnalyticsAccess ? 'fa-check check-icon' : 'fa-times times-icon'"></i>
+            </td>
+          </tr>
+          <tr>
+            <td class="feature-name">Profile Boost</td>
+            <td *ngFor="let plan of plans" class="feature-value">
+              <i class="fas" [ngClass]="plan.hasProfileBoost ? 'fa-check check-icon' : 'fa-times times-icon'"></i>
+            </td>
+          </tr>
+          <tr>
+            <td class="feature-name">Priority Support</td>
+            <td *ngFor="let plan of plans" class="feature-value">
+              <i class="fas" [ngClass]="plan.hasPrioritySupport ? 'fa-check check-icon' : 'fa-times times-icon'"></i>
+            </td>
+          </tr>
+          <tr>
+            <td class="feature-name">Featured Listing</td>
+            <td *ngFor="let plan of plans" class="feature-value">
+              <i class="fas" [ngClass]="plan.hasFeaturedListing ? 'fa-check check-icon' : 'fa-times times-icon'"></i>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Trust Section -->
+  <div *ngIf="!loading" class="trust-section-modern">
+    <div class="trust-item">
+      <i class="fas fa-shield-alt"></i>
+      <span>Secure Payments</span>
+    </div>
+    <div class="trust-item">
+      <i class="fas fa-undo"></i>
+      <span>14-Day Free Trial</span>
+    </div>
+    <div class="trust-item">
+      <i class="fas fa-times-circle"></i>
+      <span>Cancel Anytime</span>
+    </div>
+    <div class="trust-item">
+      <i class="fas fa-headset"></i>
+      <span>24/7 Support</span>
+    </div>
+  </div>
+</div>
+
+<!-- AI Chat Assistant Widget -->
+<div class="ai-chat-widget" [class.open]="isChatOpen">
+  <!-- Chat Button -->
+  <button class="chat-toggle-btn" (click)="toggleChat()" [class.hidden]="isChatOpen">
+    <i class="fas fa-comments"></i>
+    <span class="chat-badge" *ngIf="!isChatOpen">1</span>
+  </button>
+
+  <!-- Chat Window -->
+  <div class="chat-window" *ngIf="isChatOpen">
+    <!-- Chat Header -->
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="ai-avatar">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="ai-info">
+          <h4>AI Assistant</h4>
+          <span class="status-indicator">
+            <span class="status-dot"></span>
+            Online
+          </span>
+        </div>
+      </div>
+      <button class="chat-close-btn" (click)="toggleChat()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="chat-messages" #chatMessages>
+      <div *ngFor="let message of chatHistory" 
+           class="message" 
+           [class.user-message]="message.isUser"
+           [class.ai-message]="!message.isUser">
+        <div class="message-avatar" *ngIf="!message.isUser">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="message-content">
+          <p>{{ message.text }}</p>
+          <span class="message-time">{{ message.time }}</span>
+        </div>
+        <div class="message-avatar user-avatar" *ngIf="message.isUser">
+          <i class="fas fa-user"></i>
+        </div>
+      </div>
+
+      <!-- Typing Indicator -->
+      <div class="message ai-message" *ngIf="isTyping">
+        <div class="message-avatar">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="typing-indicator">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Suggestions -->
+    <div class="quick-suggestions" *ngIf="showSuggestions">
+      <button *ngFor="let suggestion of suggestions" 
+              class="suggestion-btn"
+              (click)="sendSuggestion(suggestion)">
+        {{ suggestion }}
+      </button>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input-container">
+      <input 
+        type="text" 
+        class="chat-input"
+        [(ngModel)]="userMessage"
+        (keyup.enter)="sendMessage()"
+        placeholder="Ask me anything about plans..."
+        [disabled]="isTyping">
+      <button class="send-btn" (click)="sendMessage()" [disabled]="!userMessage.trim() || isTyping">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+</div>

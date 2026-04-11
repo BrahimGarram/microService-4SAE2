@@ -1,0 +1,25 @@
+<!-- Admin Layout (Sidebar + Header) -->
+<div *ngIf="isAdminRoute" class="admin-layout">
+  <app-sidebar></app-sidebar>
+  <div class="admin-content">
+    <app-header></app-header>
+    <main class="main-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<!-- Auth Pages (Login/Signup) - No Navbar, No Footer -->
+<div *ngIf="isAuthPage">
+  <router-outlet></router-outlet>
+</div>
+
+<!-- Public/User Layout (Navbar + Footer) -->
+<div *ngIf="!isAdminRoute && !isAuthPage">
+  <app-navbar></app-navbar>
+  <router-outlet></router-outlet>
+  <app-footer *ngIf="showFooter"></app-footer>
+</div>
+
+<!-- Toast notifications (global) -->
+<app-toast></app-toast>

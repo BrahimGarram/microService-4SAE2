@@ -1,0 +1,306 @@
+<div class="my-subscription-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>
+      <i class="fa fa-crown"></i>
+      My Subscription
+    </h1>
+    <p class="subtitle">Manage your subscription and view usage statistics</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading your subscription...</p>
+  </div>
+
+  <!-- No Subscription -->
+  <div *ngIf="!loading && !subscription" class="empty-state-card">
+    <div class="empty-icon">
+      <i class="fa fa-inbox"></i>
+    </div>
+    <h2>No Active Subscription</h2>
+    <p>Subscribe to a plan to unlock premium features and grow your freelance business</p>
+    <button class="btn-subscribe-cta" routerLink="/subscription-plans">
+      <i class="fa fa-bolt"></i>
+      View Plans
+    </button>
+  </div>
+
+  <!-- Active Subscription -->
+  <div *ngIf="!loading && subscription" class="subscription-content">
+    <!-- Expiration Warning -->
+    <div *ngIf="isExpiringSoon()" class="alert-banner warning">
+      <i class="fa fa-exclamation-triangle"></i>
+      <div class="alert-content">
+        <strong>Subscription Expiring Soon!</strong>
+        <span>Your subscription will expire in {{ getDaysRemaining() }} days.</span>
+      </div>
+      <button class="btn-alert-action" (click)="upgradePlan()">Renew Now</button>
+    </div>
+
+    <div class="subscription-grid">
+      <!-- Current Plan Card -->
+      <div class="plan-overview-card">
+        <div class="plan-header">
+          <div class="plan-badge" [ngClass]="getPlanBadgeClass(subscription.plan.planName)">
+            <i class="fa fa-star"></i>
+            {{ subscription.plan.planName }}
+          </div>
+          <div class="status-badge" [ngClass]="getStatusClass(subscription.status)">
+            {{ subscription.status }}
+          </div>
+        </div>
+
+        <div class="plan-price-section">
+          <div class="price-display">
+            <span class="currency" *ngIf="subscription.plan.price > 0">$</span>
+            <span class="amount">{{ subscription.plan.price === 0 ? 'Free' : subscription.plan.price }}</span>
+          </div>
+          <p class="billing-cycle" *ngIf="subscription.plan.price > 0">
+            per {{ subscription.plan.billingCycle.toLowerCase() }}
+          </p>
+          <p class="plan-description">{{ subscription.plan.description }}</p>
+        </div>
+
+        <div class="plan-details">
+          <div class="detail-row">
+            <span class="detail-label">
+              <i class="fa fa-calendar-check"></i>
+              Started
+            </span>
+            <span class="detail-value">{{ formatDate(subscription.startDate) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">
+              <i class="fa fa-calendar-times"></i>
+              Expires
+            </span>
+            <span class="detail-value">{{ formatDate(subscription.endDate) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">
+              <i class="fa fa-clock"></i>
+              Days Remaining
+            </span>
+            <span class="detail-value highlight">{{ getDaysRemaining() }} days</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">
+              <i class="fa fa-sync"></i>
+              Auto-Renew
+            </span>
+            <span class="detail-value" [class.success]="subscription.autoRenew" [class.danger]="!subscription.autoRenew">
+              <i class="fa" [ngClass]="subscription.autoRenew ? 'fa-check-circle' : 'fa-times-circle'"></i>
+              {{ subscription.autoRenew ? 'Enabled' : 'Disabled' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="plan-actions">
+          <button class="btn-upgrade" (click)="upgradePlan()">
+            <i class="fa fa-arrow-up"></i>
+            Upgrade Plan
+          </button>
+          <button class="btn-cancel" (click)="openCancelModal()"
+                  [disabled]="subscription.status === 'CANCELLED'">
+            <i class="fa fa-times-circle"></i>
+            Cancel Subscription
+          </button>
+        </div>
+      </div>
+
+      <!-- Usage Statistics -->
+      <div class="usage-stats-section">
+        <h2 class="section-title">
+          <i class="fa fa-chart-line"></i>
+          Usage Statistics
+        </h2>
+        
+        <div class="stats-grid">
+          <!-- Bids Usage -->
+          <div class="stat-card-modern">
+            <div class="stat-icon bids">
+              <i class="fa fa-hand-pointer"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Bids This Month</div>
+              <div class="stat-value">
+                {{ subscription.bidsUsedThisMonth }} / {{ subscription.plan.maxBidsPerMonth === 999999 ? '∞' : subscription.plan.maxBidsPerMonth }}
+              </div>
+              <div class="progress-bar-modern">
+                <div class="progress-fill" 
+                     [ngClass]="getProgressColor()"
+                     [style.width.%]="getProgressPercentage()">
+                </div>
+              </div>
+              <div class="stat-info">{{ remainingBids }} bids remaining</div>
+            </div>
+          </div>
+
+          <!-- Commission Rate -->
+          <div class="stat-card-modern">
+            <div class="stat-icon commission">
+              <i class="fa fa-percent"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Commission Rate</div>
+              <div class="stat-value">{{ commissionRate }}%</div>
+              <div class="stat-info">Lower rates mean more earnings</div>
+            </div>
+          </div>
+
+          <!-- Max Projects -->
+          <div class="stat-card-modern">
+            <div class="stat-icon projects">
+              <i class="fa fa-folder-open"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Active Projects Limit</div>
+              <div class="stat-value">
+                {{ subscription.plan.maxProjects === 999999 ? 'Unlimited' : subscription.plan.maxProjects }}
+              </div>
+              <div class="stat-info">Maximum concurrent projects</div>
+            </div>
+          </div>
+
+          <!-- Payment Info -->
+          <div class="stat-card-modern">
+            <div class="stat-icon payment">
+              <i class="fa fa-credit-card"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Last Payment</div>
+              <div class="stat-value">${{ subscription.amountPaid }}</div>
+              <div class="stat-info">{{ subscription.paymentTransactionId || 'No transaction ID' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="features-section">
+        <h2 class="section-title">
+          <i class="fa fa-check-square"></i>
+          Plan Features
+        </h2>
+        
+        <div class="features-grid">
+          <div class="feature-item" [class.active]="true">
+            <i class="fa fa-check-circle"></i>
+            <div class="feature-content">
+              <strong>{{ subscription.plan.maxBidsPerMonth === 999999 ? 'Unlimited' : subscription.plan.maxBidsPerMonth }} Bids</strong>
+              <span>Per month</span>
+            </div>
+          </div>
+
+          <div class="feature-item" [class.active]="hasAnalytics">
+            <i class="fa" [ngClass]="hasAnalytics ? 'fa-check-circle' : 'fa-times-circle'"></i>
+            <div class="feature-content">
+              <strong>Analytics Dashboard</strong>
+              <span>{{ hasAnalytics ? 'Enabled' : 'Not available' }}</span>
+            </div>
+          </div>
+
+          <div class="feature-item" [class.active]="hasProfileBoost">
+            <i class="fa" [ngClass]="hasProfileBoost ? 'fa-check-circle' : 'fa-times-circle'"></i>
+            <div class="feature-content">
+              <strong>Profile Boost</strong>
+              <span>{{ hasProfileBoost ? 'Active' : 'Not available' }}</span>
+            </div>
+          </div>
+
+          <div class="feature-item" [class.active]="subscription.plan.hasPrioritySupport">
+            <i class="fa" [ngClass]="subscription.plan.hasPrioritySupport ? 'fa-check-circle' : 'fa-times-circle'"></i>
+            <div class="feature-content">
+              <strong>Priority Support</strong>
+              <span>{{ subscription.plan.hasPrioritySupport ? '24/7 Available' : 'Not available' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subscription History -->
+    <div class="history-section" *ngIf="subscriptionHistory.length > 0">
+      <h2 class="section-title">
+        <i class="fa fa-history"></i>
+        Subscription History
+      </h2>
+      
+      <div class="history-table-wrapper">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Plan</th>
+              <th>Status</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let sub of subscriptionHistory">
+              <td>
+                <span class="plan-badge-small" [ngClass]="getPlanBadgeClass(sub.plan.planName)">
+                  {{ sub.plan.planName }}
+                </span>
+              </td>
+              <td>
+                <span class="status-badge-small" [ngClass]="getStatusClass(sub.status)">
+                  {{ sub.status }}
+                </span>
+              </td>
+              <td>{{ formatDate(sub.startDate) }}</td>
+              <td>{{ formatDate(sub.endDate) }}</td>
+              <td class="amount">${{ sub.amountPaid }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel Subscription Modal -->
+<div class="modal-overlay" *ngIf="showCancelModal" (click)="closeCancelModal()">
+  <div class="modal-modern" (click)="$event.stopPropagation()">
+    <div class="modal-header-modern">
+      <h3>
+        <i class="fa fa-exclamation-triangle"></i>
+        Cancel Subscription
+      </h3>
+      <button class="btn-close-modern" (click)="closeCancelModal()">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="modal-body-modern">
+      <p class="modal-warning">
+        Are you sure you want to cancel your subscription? You'll lose access to premium features at the end of your billing period.
+      </p>
+      
+      <div class="form-group-modern">
+        <label>Please tell us why you're cancelling:</label>
+        <textarea class="textarea-modern" rows="4" [(ngModel)]="cancellationReason"
+                  placeholder="Your feedback helps us improve..."></textarea>
+      </div>
+    </div>
+    
+    <div class="modal-footer-modern">
+      <button class="btn-secondary-modern" (click)="closeCancelModal()">
+        Keep Subscription
+      </button>
+      <button class="btn-danger-modern" (click)="confirmCancellation()" [disabled]="cancelling">
+        <span *ngIf="!cancelling">
+          <i class="fa fa-times-circle"></i>
+          Confirm Cancellation
+        </span>
+        <span *ngIf="cancelling">
+          <i class="fa fa-spinner fa-spin"></i>
+          Cancelling...
+        </span>
+      </button>
+    </div>
+  </div>
+</div>

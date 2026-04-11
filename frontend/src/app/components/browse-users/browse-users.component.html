@@ -1,0 +1,154 @@
+<div class="browse-users-page">
+  <div class="browse-users-container">
+    
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1><i class="fas fa-users"></i> Browse Users</h1>
+      <p>Discover and connect with freelancers and users</p>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="search-filters-card">
+      <div class="search-section">
+        <div class="search-input-wrapper">
+          <i class="fas fa-search"></i>
+          <input 
+            type="text" 
+            [(ngModel)]="searchTerm"
+            (input)="onSearchChange()"
+            placeholder="Search by name, email, skills, or location..."
+            class="search-input">
+          <button *ngIf="searchTerm" class="clear-search" (click)="searchTerm = ''; onSearchChange()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="filters-section">
+        <div class="filter-group">
+          <label><i class="fas fa-user-tag"></i> Role</label>
+          <select [(ngModel)]="selectedRole" (change)="onRoleChange()" class="filter-select">
+            <option *ngFor="let option of roleOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label><i class="fas fa-circle"></i> Availability</label>
+          <select [(ngModel)]="selectedAvailability" (change)="onAvailabilityChange()" class="filter-select">
+            <option *ngFor="let option of availabilityOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+        
+        <button class="btn-clear-filters" (click)="clearFilters()">
+          <i class="fas fa-times"></i> Clear Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage" class="error-card">
+      <i class="fas fa-exclamation-circle"></i>
+      <p>{{ errorMessage }}</p>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading users...</p>
+    </div>
+
+    <!-- Results Summary -->
+    <div *ngIf="!loading && !errorMessage" class="results-summary">
+      <p>
+        <strong>{{ filteredUsers.length }}</strong> 
+        {{ filteredUsers.length === 1 ? 'user found' : 'users found' }}
+        <span *ngIf="searchTerm || selectedRole !== 'ALL' || selectedAvailability !== 'ALL'">
+          (filtered from {{ allUsers.length }} total)
+        </span>
+      </p>
+    </div>
+
+    <!-- Users Grid -->
+    <div *ngIf="!loading && !errorMessage" class="users-grid">
+      <div *ngFor="let user of filteredUsers" class="user-card" (click)="viewProfile(user.id)">
+        <div class="user-card-header">
+          <div class="user-avatar" [style.background-image]="user.profilePicture ? 'url(' + user.profilePicture + ')' : 'none'">
+            <i *ngIf="!user.profilePicture" class="fas fa-user-circle"></i>
+          </div>
+          <div class="user-info">
+            <h3>
+              {{ user.username }}
+              <span *ngIf="user.verified" class="verified-badge" title="Verified">
+                <i class="fas fa-check-circle"></i>
+              </span>
+            </h3>
+            <p class="user-email" *ngIf="user.email">{{ user.email }}</p>
+            <div class="user-meta">
+              <span class="role-badge" [class.role-user]="user.role === 'USER'"
+                    [class.role-freelancer]="user.role === 'FREELANCER'"
+                    [class.role-admin]="user.role === 'ADMIN'">
+                {{ user.role }}
+              </span>
+              <span class="availability-badge" 
+                    [style.color]="getAvailabilityColor(user.availability)"
+                    [title]="getAvailabilityLabel(user.availability)">
+                <i class="fas fa-circle"></i>
+                {{ getAvailabilityLabel(user.availability) }}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="user-card-body" *ngIf="user.bio">
+          <p class="user-bio">{{ user.bio.length > 150 ? (user.bio.substring(0, 150) + '...') : user.bio }}</p>
+        </div>
+        
+        <div class="user-card-footer">
+          <div class="user-stats">
+            <div class="stat-item" *ngIf="user.skills && user.skills.length > 0">
+              <i class="fas fa-tools"></i>
+              <span>{{ user.skills.length }} {{ user.skills.length === 1 ? 'skill' : 'skills' }}</span>
+            </div>
+            <div class="stat-item" *ngIf="user.portfolioItems && user.portfolioItems.length > 0">
+              <i class="fas fa-briefcase"></i>
+              <span>{{ user.portfolioItems.length }} {{ user.portfolioItems.length === 1 ? 'project' : 'projects' }}</span>
+            </div>
+            <div class="stat-item" *ngIf="user.hourlyRate && user.role === 'FREELANCER'">
+              <i class="fas fa-dollar-sign"></i>
+              <span>${{ user.hourlyRate | number:'1.0-0' }}/hr</span>
+            </div>
+          </div>
+          
+          <div class="user-skills-preview" *ngIf="user.skills && user.skills.length > 0">
+            <span class="skill-tag" *ngFor="let skill of user.skills.slice(0, 3)">
+              {{ skill.name }}
+            </span>
+            <span *ngIf="user.skills.length > 3" class="more-skills">
+              +{{ user.skills.length - 3 }} more
+            </span>
+          </div>
+        </div>
+        
+        <div class="user-card-action">
+          <button class="btn-view-profile">
+            <i class="fas fa-eye"></i> View Profile
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Results -->
+    <div *ngIf="!loading && !errorMessage && filteredUsers.length === 0" class="no-results">
+      <i class="fas fa-search"></i>
+      <h2>No users found</h2>
+      <p>Try adjusting your search criteria or filters.</p>
+      <button class="btn-clear-filters" (click)="clearFilters()">
+        <i class="fas fa-times"></i> Clear All Filters
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,387 @@
+<div class="container-fluid py-4">
+  <!-- Page Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2 class="fw-bold">
+        <i class="bi bi-shield-check me-2"></i>
+        Subscription Management
+      </h2>
+      <p class="text-muted">Manage subscription plans, monitor usage, and view analytics</p>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a class="nav-link" [class.active]="activeTab === 'plans'" 
+         (click)="activeTab = 'plans'" href="javascript:void(0)">
+        <i class="bi bi-box-seam me-2"></i>
+        Plans
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" [class.active]="activeTab === 'subscriptions'" 
+         (click)="activeTab = 'subscriptions'" href="javascript:void(0)">
+        <i class="bi bi-people me-2"></i>
+        Subscriptions
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" [class.active]="activeTab === 'analytics'" 
+         (click)="activeTab = 'analytics'" href="javascript:void(0)">
+        <i class="bi bi-graph-up me-2"></i>
+        Analytics
+      </a>
+    </li>
+  </ul>
+
+  <!-- Plans Tab -->
+  <div *ngIf="activeTab === 'plans'">
+    <div class="row mb-3">
+      <div class="col-12">
+        <button class="btn btn-primary" (click)="openPlanModal()">
+          <i class="bi bi-plus-circle me-2"></i>
+          Create New Plan
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="plansLoading" class="text-center py-5">
+      <div class="spinner-border text-primary"></div>
+    </div>
+
+    <div *ngIf="!plansLoading" class="row g-4">
+      <div *ngFor="let plan of plans" class="col-lg-3 col-md-6">
+        <div class="card h-100 shadow-sm">
+          <div class="card-header" [ngClass]="'bg-' + subscriptionService.getPlanColor(plan.planName)">
+            <h5 class="text-white mb-0">{{ plan.planName }}</h5>
+          </div>
+          <div class="card-body">
+            <h3 class="fw-bold mb-3">
+              <span *ngIf="plan.price === 0">Free</span>
+              <span *ngIf="plan.price > 0">{{ formatCurrency(plan.price) }}</span>
+            </h3>
+            <p class="text-muted small">{{ plan.description }}</p>
+            
+            <ul class="list-unstyled small">
+              <li class="mb-2">
+                <i class="bi bi-check-circle text-success me-2"></i>
+                {{ plan.maxBidsPerMonth === 999999 ? 'Unlimited' : plan.maxBidsPerMonth }} bids/month
+              </li>
+              <li class="mb-2">
+                <i class="bi bi-check-circle text-success me-2"></i>
+                {{ plan.commissionRate }}% commission
+              </li>
+              <li class="mb-2">
+                <i class="bi bi-check-circle text-success me-2"></i>
+                {{ plan.maxProjects === 999999 ? 'Unlimited' : plan.maxProjects }} projects
+              </li>
+              <li class="mb-2" [class.text-muted]="!plan.hasAnalyticsAccess">
+                <i class="bi me-2" [ngClass]="plan.hasAnalyticsAccess ? 'bi-check-circle text-success' : 'bi-x-circle text-muted'"></i>
+                Analytics
+              </li>
+              <li class="mb-2" [class.text-muted]="!plan.hasProfileBoost">
+                <i class="bi me-2" [ngClass]="plan.hasProfileBoost ? 'bi-check-circle text-success' : 'bi-x-circle text-muted'"></i>
+                Profile Boost
+              </li>
+            </ul>
+
+            <div class="mt-3">
+              <span class="badge" [ngClass]="plan.isActive ? 'bg-success' : 'bg-secondary'">
+                {{ plan.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+          </div>
+          <div class="card-footer bg-transparent">
+            <button class="btn btn-sm btn-outline-primary w-100" (click)="openPlanModal(plan)">
+              <i class="bi bi-pencil me-2"></i>
+              Edit Plan
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subscriptions Tab -->
+  <div *ngIf="activeTab === 'subscriptions'">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light">
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <h5 class="mb-0">All Subscriptions</h5>
+          </div>
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-search"></i>
+              </span>
+              <input type="text" class="form-control" placeholder="Search by user or plan...">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>User ID</th>
+                <th>Plan</th>
+                <th>Status</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Amount</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="7" class="text-center text-muted py-5">
+                  <i class="bi bi-inbox display-4 d-block mb-3"></i>
+                  No subscriptions data available
+                  <br>
+                  <small>Subscriptions will appear here once users subscribe</small>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics Tab -->
+  <div *ngIf="activeTab === 'analytics'">
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+      <div class="col-lg-3 col-md-6">
+        <div class="card shadow-sm stats-card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <p class="text-muted mb-1">Total Subscriptions</p>
+                <h3 class="fw-bold mb-0">{{ analytics.totalSubscriptions }}</h3>
+              </div>
+              <div class="stats-icon bg-primary">
+                <i class="bi bi-people text-white"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6">
+        <div class="card shadow-sm stats-card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <p class="text-muted mb-1">Active Subscriptions</p>
+                <h3 class="fw-bold mb-0">{{ analytics.activeSubscriptions }}</h3>
+              </div>
+              <div class="stats-icon bg-success">
+                <i class="bi bi-check-circle text-white"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6">
+        <div class="card shadow-sm stats-card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <p class="text-muted mb-1">Monthly Revenue</p>
+                <h3 class="fw-bold mb-0">{{ formatCurrency(analytics.monthlyRevenue) }}</h3>
+              </div>
+              <div class="stats-icon bg-warning">
+                <i class="bi bi-currency-dollar text-white"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6">
+        <div class="card shadow-sm stats-card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <p class="text-muted mb-1">Churn Rate</p>
+                <h3 class="fw-bold mb-0">{{ formatPercentage(analytics.churnRate) }}</h3>
+              </div>
+              <div class="stats-icon bg-danger">
+                <i class="bi bi-graph-down text-white"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plan Distribution -->
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">Plan Distribution</h5>
+          </div>
+          <div class="card-body">
+            <div *ngFor="let item of analytics.planDistribution" class="mb-3">
+              <div class="d-flex justify-content-between mb-2">
+                <span [ngClass]="getPlanBadgeClass(item.name)">{{ item.name }}</span>
+                <strong>{{ item.count }} ({{ formatPercentage(item.percentage) }})</strong>
+              </div>
+              <div class="progress" style="height: 10px;">
+                <div class="progress-bar" 
+                     [ngClass]="'bg-' + subscriptionService.getPlanColor(item.name)"
+                     [style.width.%]="item.percentage">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">Recent Activity</h5>
+          </div>
+          <div class="card-body">
+            <div class="activity-item">
+              <i class="bi bi-check-circle text-success"></i>
+              <div>
+                <strong>New subscription</strong>
+                <p class="text-muted small mb-0">User #1234 subscribed to PRO plan</p>
+                <small class="text-muted">2 hours ago</small>
+              </div>
+            </div>
+            <div class="activity-item">
+              <i class="bi bi-arrow-up-circle text-primary"></i>
+              <div>
+                <strong>Plan upgrade</strong>
+                <p class="text-muted small mb-0">User #5678 upgraded to ENTERPRISE</p>
+                <small class="text-muted">5 hours ago</small>
+              </div>
+            </div>
+            <div class="activity-item">
+              <i class="bi bi-x-circle text-danger"></i>
+              <div>
+                <strong>Subscription cancelled</strong>
+                <p class="text-muted small mb-0">User #9012 cancelled BASIC plan</p>
+                <small class="text-muted">1 day ago</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Plan Modal -->
+<div class="modal fade" [class.show]="showPlanModal" [style.display]="showPlanModal ? 'block' : 'none'" 
+     tabindex="-1" *ngIf="showPlanModal">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-plus-circle me-2"></i>
+          {{ editingPlan ? 'Edit Plan' : 'Create New Plan' }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closePlanModal()"></button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Plan Name *</label>
+              <input type="text" class="form-control" [(ngModel)]="planForm.planName" name="planName"
+                     placeholder="e.g., PREMIUM">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Billing Cycle *</label>
+              <select class="form-select" [(ngModel)]="planForm.billingCycle" name="billingCycle">
+                <option value="MONTHLY">Monthly</option>
+                <option value="QUARTERLY">Quarterly</option>
+                <option value="YEARLY">Yearly</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Description *</label>
+              <textarea class="form-control" rows="2" [(ngModel)]="planForm.description" name="description"
+                        placeholder="Brief description of the plan"></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Price ($) *</label>
+              <input type="number" class="form-control" [(ngModel)]="planForm.price" name="price" min="0" step="0.01">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Max Bids/Month *</label>
+              <input type="number" class="form-control" [(ngModel)]="planForm.maxBidsPerMonth" name="maxBids" min="0">
+              <small class="text-muted">Use 999999 for unlimited</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Commission Rate (%) *</label>
+              <input type="number" class="form-control" [(ngModel)]="planForm.commissionRate" name="commission" 
+                     min="0" max="100" step="0.1">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Max Projects *</label>
+              <input type="number" class="form-control" [(ngModel)]="planForm.maxProjects" name="maxProjects" min="0">
+              <small class="text-muted">Use 999999 for unlimited</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Status</label>
+              <select class="form-select" [(ngModel)]="planForm.isActive" name="isActive">
+                <option [ngValue]="true">Active</option>
+                <option [ngValue]="false">Inactive</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Features</label>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="planForm.hasAnalyticsAccess" 
+                       name="analytics" id="analytics">
+                <label class="form-check-label" for="analytics">
+                  Analytics Dashboard Access
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="planForm.hasProfileBoost" 
+                       name="boost" id="boost">
+                <label class="form-check-label" for="boost">
+                  Profile Boost
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="planForm.hasPrioritySupport" 
+                       name="support" id="support">
+                <label class="form-check-label" for="support">
+                  Priority Support
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="planForm.hasFeaturedListing" 
+                       name="featured" id="featured">
+                <label class="form-check-label" for="featured">
+                  Featured Listing
+                </label>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closePlanModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="savePlan()">
+          <i class="bi bi-check-circle me-2"></i>
+          {{ editingPlan ? 'Update Plan' : 'Create Plan' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="showPlanModal" *ngIf="showPlanModal"></div>

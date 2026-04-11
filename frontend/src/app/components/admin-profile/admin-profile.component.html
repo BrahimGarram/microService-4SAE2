@@ -1,0 +1,175 @@
+<div class="admin-profile-page">
+  <div class="admin-profile-container">
+    <!-- Profile Header Card -->
+    <div class="profile-header-card">
+      <div class="profile-avatar-section">
+        <div class="profile-avatar">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="profile-basic-info">
+          <h1>{{ user?.username || 'Loading...' }}</h1>
+          <p class="profile-email">{{ user?.email || '' }}</p>
+          <span class="role-badge" [class.role-user]="user?.role === 'USER'"
+                [class.role-freelancer]="user?.role === 'FREELANCER'"
+                [class.role-admin]="user?.role === 'ADMIN'">
+            {{ user?.role || '' }}
+          </span>
+        </div>
+      </div>
+      <button class="btn-edit-toggle" (click)="toggleEditMode()" *ngIf="user">
+        <i class="fas" [class.fa-edit]="!isEditMode" [class.fa-times]="isEditMode"></i>
+        <span>{{ isEditMode ? 'Cancel' : 'Edit Profile' }}</span>
+      </button>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div *ngIf="successMessage" class="alert-message alert-success">
+      <i class="fas fa-check-circle"></i>
+      <span>{{ successMessage }}</span>
+      <button class="alert-close" (click)="successMessage = null">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert-message alert-error">
+      <i class="fas fa-exclamation-circle"></i>
+      <span>{{ errorMessage }}</span>
+      <button class="alert-close" (click)="errorMessage = null">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading && !user" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading profile...</p>
+    </div>
+
+    <!-- Profile Content -->
+    <div *ngIf="user" class="profile-content">
+      <!-- View Mode -->
+      <div *ngIf="!isEditMode" class="profile-view-mode">
+        <div class="info-card">
+          <div class="info-item">
+            <div class="info-icon">
+              <i class="fas fa-id-badge"></i>
+            </div>
+            <div class="info-content">
+              <label>User ID</label>
+              <p>#{{ user.id }}</p>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-icon">
+              <i class="fas fa-envelope"></i>
+            </div>
+            <div class="info-content">
+              <label>Email</label>
+              <p>{{ user.email }}</p>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-icon">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="info-content">
+              <label>Member Since</label>
+              <p>{{ user.createdAt | date:'MMM d, y' }}</p>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-icon">
+              <i class="fas fa-user-tag"></i>
+            </div>
+            <div class="info-content">
+              <label>Role</label>
+              <p class="role-text">{{ user.role }}</p>
+            </div>
+          </div>
+
+          <div class="info-item" *ngIf="user.updatedAt">
+            <div class="info-icon">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="info-content">
+              <label>Last Updated</label>
+              <p>{{ user.updatedAt | date:'MMM d, y' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Mode -->
+      <div *ngIf="isEditMode" class="profile-edit-mode">
+        <form (ngSubmit)="updateProfile()" class="edit-form">
+          <div class="form-card">
+            <h2><i class="fas fa-edit"></i> Edit Profile Information</h2>
+            
+            <div class="form-group">
+              <label for="username">
+                <i class="fas fa-user"></i> Username
+              </label>
+              <input 
+                type="text" 
+                id="username" 
+                [(ngModel)]="updateRequest.username" 
+                name="username"
+                placeholder="Enter your username"
+                required>
+            </div>
+
+            <div class="form-group">
+              <label for="email">
+                <i class="fas fa-envelope"></i> Email
+              </label>
+              <input 
+                type="email" 
+                id="email" 
+                [(ngModel)]="updateRequest.email" 
+                name="email"
+                placeholder="Enter your email"
+                required>
+            </div>
+
+            <div class="form-group readonly-field">
+              <label>
+                <i class="fas fa-user-tag"></i> Role
+              </label>
+              <div class="readonly-value">
+                <span class="role-badge" [class.role-user]="user.role === 'USER'"
+                      [class.role-freelancer]="user.role === 'FREELANCER'"
+                      [class.role-admin]="user.role === 'ADMIN'">
+                  {{ user.role }}
+                </span>
+                <small>Role cannot be changed</small>
+              </div>
+            </div>
+
+            <div class="form-group readonly-field">
+              <label>
+                <i class="fas fa-calendar-alt"></i> Member Since
+              </label>
+              <div class="readonly-value">
+                <p>{{ user.createdAt | date:'MMM d, y' }}</p>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-cancel" (click)="cancelEdit()" [disabled]="loading">
+                <i class="fas fa-times"></i> Cancel
+              </button>
+              <button type="submit" class="btn-save" [disabled]="loading">
+                <i class="fas fa-save" *ngIf="!loading"></i>
+                <i class="fas fa-spinner fa-spin" *ngIf="loading"></i>
+                <span>{{ loading ? 'Updating...' : 'Save Changes' }}</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
