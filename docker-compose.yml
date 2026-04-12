@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  eureka:
+    build: ./Eureka
+    container_name: eureka
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  api-gateway:
+    build: ./ApiGateway4sae2
+    container_name: api-gateway
+    ports:
+      - "8090:8090"
+    depends_on:
+      eureka:
+        condition: service_healthy
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+
+  # ── Microservices ───────────────────────────────────────────────────────────
+
+  user-service:
+    build: ./backend
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      eureka:
+        condition: service_healthy
+
+  project-service:
+    build: ./project-service
+    container_name: project-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      eureka:
+        condition: service_healthy
+
+  contract-service:
+    build: ./contract-service
+    container_name: contract-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      eureka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+      USER_SERVICE_URL: http://user-service:8081
+
+  badge-service:
+    build: ./badge-service
+    container_name: badge-service
+    ports:
+      - "8085:8085"
+    depends_on:
+      eureka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+
+  complaints-service:
+    build: ./complaints-service
+    container_name: complaints-service
+    ports:
+      - "8089:8089"
+    depends_on:
+      eureka:
+        condition: service_healthy

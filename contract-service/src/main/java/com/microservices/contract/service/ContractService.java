@@ -4,6 +4,8 @@ import com.microservices.contract.dto.ContractFilterDTO;
 import com.microservices.contract.dto.ContractStatsDTO;
 import com.microservices.contract.entity.Contract;
 import com.microservices.contract.entity.ContractStatus;
+import com.microservices.contract.messaging.ContractCreatedEvent;
+import com.microservices.contract.messaging.ContractEventPublisher;
 import com.microservices.contract.repository.ContractRepository;
 import com.microservices.contract.specification.ContractSpecification;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class ContractService {
 
     private final ContractRepository contractRepository;
+    private final ContractEventPublisher eventPublisher;
 
     public List<Contract> getAllContracts() { return contractRepository.findAll(); }
     public Optional<Contract> getContractById(Integer id) { return contractRepository.findById(id); }
@@ -29,7 +32,16 @@ public class ContractService {
             throw new IllegalArgumentException("Start date must be today or in the future");
         if (!contract.getEndDate().isAfter(contract.getStartDate()))
             throw new IllegalArgumentException("End date must be after start date");
-        return contractRepository.save(contract);
+        Contract saved = contractRepository.save(contract);
+        // Publish async event to badge-service via RabbitMQ
+        eventPublisher.publishContractCreated(new ContractCreatedEvent(
+                saved.getIdContract(),
+                saved.getFreelancerEmail(),
+                saved.getFreelancerName(),
+                saved.getContractTitle(),
+                saved.getStatus().name()
+        ));
+        return saved;
     }
 
     public Contract updateContract(Integer id, Contract d) {
