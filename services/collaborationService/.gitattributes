@@ -1,0 +1,2 @@
+# Scripts shell : LF obligatoire (sinon le conteneur Apache/PHP échoue au démarrage sur Windows)
+*.sh text eol=lf

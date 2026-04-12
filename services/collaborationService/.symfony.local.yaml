@@ -1,0 +1,4 @@
+# Port du serveur local Symfony CLI : symfony server:start
+# https://symfony.com/doc/current/setup/symfony_server.html
+http:
+    port: 8888
