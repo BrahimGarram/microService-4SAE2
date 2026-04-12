@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eureka-server
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eureka-server
+  template:
+    metadata:
+      labels:
+        app: eureka-server
+    spec:
+      containers:
+      - name: eureka-server
+        image: brahim2002/eureka:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8761
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "kubernetes"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eureka-server
+  namespace: microservices
+spec:
+  type: ClusterIP
+  selector:
+    app: eureka-server
+  ports:
+  - port: 8761
+    targetPort: 8761
+    name: http

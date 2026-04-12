@@ -1,0 +1,339 @@
+<div class="profile-page">
+  <header class="page-header">
+    <h1><i class="fas fa-user"></i> Mon profil</h1>
+    <p class="page-subtitle">Gérez vos informations personnelles</p>
+  </header>
+
+  <!-- Messages -->
+  <div *ngIf="successMessage" class="alert alert--success">
+    <i class="fas fa-check-circle"></i>
+    <span>{{ successMessage }}</span>
+    <button type="button" class="alert-close" (click)="successMessage = null"><i class="fas fa-times"></i></button>
+  </div>
+  <div *ngIf="errorMessage" class="alert alert--error">
+    <i class="fas fa-exclamation-circle"></i>
+    <span>{{ errorMessage }}</span>
+    <button type="button" class="alert-close" (click)="errorMessage = null"><i class="fas fa-times"></i></button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading && !user" class="card card--loading">
+    <div class="spinner"></div>
+    <p>Chargement du profil...</p>
+  </div>
+
+  <div *ngIf="user" class="card card--profile">
+    <!-- En-tête : avatar + infos + bouton -->
+    <div class="profile-head">
+      <div class="profile-head-left">
+        <div class="avatar-wrap">
+          <div class="avatar" [style.background-image]="user?.profilePicture ? 'url(' + user.profilePicture + ')' : 'none'"
+               [class.avatar--initial]="!user?.profilePicture">
+            <span *ngIf="!user?.profilePicture">{{ (user?.username || '?')[0] | uppercase }}</span>
+          </div>
+          <div *ngIf="isEditMode" class="avatar-upload-overlay">
+            <label for="profile-picture-upload" class="avatar-upload-btn">
+              <i class="fas fa-camera"></i>
+              <input type="file" id="profile-picture-upload" accept="image/*" (change)="onFileSelected($event)">
+            </label>
+          </div>
+          <div *ngIf="selectedFile && isEditMode" class="avatar-preview-actions">
+            <button type="button" class="btn-sm btn-sm--green" (click)="uploadProfilePicture()" [disabled]="uploadingPicture">
+              <i class="fas" [class.fa-spinner]="uploadingPicture" [class.fa-spin]="uploadingPicture" [class.fa-check]="!uploadingPicture"></i>
+              {{ uploadingPicture ? 'Envoi...' : 'Enregistrer' }}
+            </button>
+            <button type="button" class="btn-sm btn-sm--grey" (click)="selectedFile = null; previewImage = null">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div class="profile-meta">
+          <h2>
+            {{ user.username }}
+            <span *ngIf="user?.verified" class="verified-badge" title="Compte vérifié"><i class="fas fa-check-circle"></i></span>
+          </h2>
+          <span class="email">{{ user.email }}</span>
+          <div class="profile-badges">
+            <span class="role-pill" [class.role-user]="user?.role === 'USER'"
+                  [class.role-freelancer]="user?.role === 'FREELANCER'"
+                  [class.role-admin]="user?.role === 'ADMIN'">{{ user.role }}</span>
+            <span class="availability-pill" [style.color]="getAvailabilityColor(user?.availability)"
+                  [title]="getAvailabilityLabel(user?.availability)">
+              <i class="fas" [ngClass]="getAvailabilityIcon(user?.availability)"></i>
+              {{ getAvailabilityLabel(user?.availability) }}
+            </span>
+          </div>
+          <div class="profile-follow-stats">
+            <button type="button" class="follow-stat" (click)="openFollowModal('followers')">
+              <strong>{{ user.followerCount ?? 0 }}</strong> abonnés
+            </button>
+            <span class="follow-stat-sep">·</span>
+            <button type="button" class="follow-stat" (click)="openFollowModal('following')">
+              <strong>{{ user.followingCount ?? 0 }}</strong> abonnements
+            </button>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn-edit" (click)="toggleEditMode()">
+        <i class="fas" [class.fa-edit]="!isEditMode" [class.fa-times]="isEditMode"></i>
+        {{ isEditMode ? 'Annuler' : 'Modifier' }}
+      </button>
+    </div>
+
+    <!-- Mode lecture -->
+    <div *ngIf="!isEditMode" class="profile-body">
+      <div class="info-grid">
+        <div class="info-cell">
+          <span class="info-label"><i class="fas fa-envelope"></i> Email</span>
+          <span class="info-value">{{ user.email }}</span>
+        </div>
+        <div class="info-cell" *ngIf="user.bio">
+          <span class="info-label"><i class="fas fa-align-left"></i> Bio</span>
+          <span class="info-value">{{ user.bio }}</span>
+        </div>
+        <div class="info-cell" *ngIf="user.city">
+          <span class="info-label"><i class="fas fa-map-marker-alt"></i> Ville</span>
+          <span class="info-value">{{ user.city }}{{ user.country ? ', ' + user.country : '' }}</span>
+        </div>
+        <div class="info-cell" *ngIf="user.timezone">
+          <span class="info-label"><i class="fas fa-clock"></i> Fuseau</span>
+          <span class="info-value">{{ user.timezone }}</span>
+        </div>
+        <div class="info-cell" *ngIf="user.hourlyRate && user.role === 'FREELANCER'">
+          <span class="info-label"><i class="fas fa-dollar-sign"></i> Taux horaire</span>
+          <span class="info-value">{{ user.hourlyRate | number:'1.2-2' }} $/h</span>
+        </div>
+        <div class="info-cell">
+          <span class="info-label"><i class="fas fa-calendar-plus"></i> Inscription</span>
+          <span class="info-value">{{ user.createdAt | date:'d MMM y' }}</span>
+        </div>
+        <div class="info-cell">
+          <span class="info-label"><i class="fas fa-user-tag"></i> Rôle</span>
+          <span class="info-value role-pill" [class.role-user]="user.role === 'USER'"
+                [class.role-freelancer]="user.role === 'FREELANCER'"
+                [class.role-admin]="user.role === 'ADMIN'">{{ user.role }}</span>
+        </div>
+      </div>
+
+      <!-- Compétences -->
+      <section *ngIf="user.skills && user.skills.length > 0" class="profile-section">
+        <h3><i class="fas fa-tools"></i> Compétences</h3>
+        <div class="skills-list">
+          <span class="skill-tag" *ngFor="let skill of user.skills">
+            <span class="skill-name">{{ skill.name }}</span>
+            <span *ngIf="skill.level" class="skill-meta">{{ skill.level }}</span>
+            <span *ngIf="skill.yearsOfExperience" class="skill-meta">{{ skill.yearsOfExperience }} an(s)</span>
+          </span>
+        </div>
+      </section>
+
+      <!-- Portfolio -->
+      <section *ngIf="user.portfolioItems && user.portfolioItems.length > 0" class="profile-section">
+        <h3><i class="fas fa-briefcase"></i> Portfolio</h3>
+        <div class="portfolio-grid">
+          <div class="portfolio-item" *ngFor="let item of user.portfolioItems">
+            <div class="portfolio-image" *ngIf="item.imageUrl" [style.background-image]="'url(' + item.imageUrl + ')'"></div>
+            <div class="portfolio-image portfolio-image--placeholder" *ngIf="!item.imageUrl"><i class="fas fa-image"></i></div>
+            <div class="portfolio-content">
+              <h4>{{ item.title }}</h4>
+              <p *ngIf="item.description">{{ item.description }}</p>
+              <div class="portfolio-tech" *ngIf="item.technologies">
+                <span class="tech-tag" *ngFor="let tech of item.technologies.split(',')">{{ tech.trim() }}</span>
+              </div>
+              <a *ngIf="item.url" [href]="item.url" target="_blank" class="portfolio-link"><i class="fas fa-external-link-alt"></i> Voir le projet</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Langues -->
+      <section *ngIf="user.languages && user.languages.length > 0" class="profile-section">
+        <h3><i class="fas fa-language"></i> Langues</h3>
+        <div class="languages-list">
+          <span class="language-item" *ngFor="let lang of user.languages">
+            <span class="language-name">{{ lang.name }}</span>
+            <span *ngIf="lang.proficiency" class="language-proficiency">{{ lang.proficiency }}</span>
+          </span>
+        </div>
+      </section>
+
+      <!-- Réseaux sociaux -->
+      <section *ngIf="user.socialLinks && user.socialLinks.length > 0" class="profile-section">
+        <h3><i class="fas fa-share-alt"></i> Réseaux sociaux</h3>
+        <div class="social-links-list">
+          <a *ngFor="let link of user.socialLinks" [href]="link.url" target="_blank" class="social-link-item">
+            <i class="fab" [ngClass]="'fa-' + link.platform.toLowerCase()"></i>
+            <span>{{ link.platform }}</span>
+            <i class="fas fa-external-link-alt"></i>
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <!-- Mode édition -->
+    <div *ngIf="isEditMode" class="profile-body profile-body--edit">
+      <form (ngSubmit)="updateProfile()" class="edit-form">
+        <div class="form-section">
+          <h3><i class="fas fa-edit"></i> Informations de base</h3>
+          <div class="form-row form-row--2">
+            <div class="field">
+              <label for="username"><i class="fas fa-user"></i> Nom d'utilisateur *</label>
+              <input type="text" id="username" [(ngModel)]="updateRequest.username" name="username" placeholder="Nom d'utilisateur" required>
+            </div>
+            <div class="field">
+              <label for="email"><i class="fas fa-envelope"></i> Email *</label>
+              <input type="email" id="email" [(ngModel)]="updateRequest.email" name="email" placeholder="Email" required>
+            </div>
+          </div>
+          <div class="field">
+            <label for="bio"><i class="fas fa-align-left"></i> Bio</label>
+            <textarea id="bio" [(ngModel)]="updateRequest.bio" name="bio" placeholder="Présentez-vous..." rows="3"></textarea>
+          </div>
+          <div class="form-row form-row--2">
+            <div class="field">
+              <label for="city"><i class="fas fa-map-marker-alt"></i> Ville</label>
+              <input type="text" id="city" [(ngModel)]="updateRequest.city" name="city" placeholder="Ville">
+            </div>
+            <div class="field">
+              <label for="timezone"><i class="fas fa-clock"></i> Fuseau horaire</label>
+              <select id="timezone" [(ngModel)]="updateRequest.timezone" name="timezone">
+                <option value="">Choisir un fuseau</option>
+                <option *ngFor="let tz of timezones" [value]="tz">{{ tz }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row form-row--2" *ngIf="user.role === 'FREELANCER'">
+            <div class="field">
+              <label for="hourlyRate"><i class="fas fa-dollar-sign"></i> Taux horaire ($)</label>
+              <input type="number" id="hourlyRate" [(ngModel)]="updateRequest.hourlyRate" name="hourlyRate" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="field">
+              <label for="availability"><i class="fas fa-circle"></i> Disponibilité</label>
+              <select id="availability" [(ngModel)]="updateRequest.availability" name="availability">
+                <option *ngFor="let opt of availabilityOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="field" *ngIf="user.role !== 'FREELANCER'">
+            <label for="availability"><i class="fas fa-circle"></i> Disponibilité</label>
+            <select id="availability" [(ngModel)]="updateRequest.availability" name="availability">
+              <option *ngFor="let opt of availabilityOptions" [value]="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-tools"></i> Compétences</h3>
+          <div class="field">
+            <label>Ajouter une compétence</label>
+            <div class="add-item-row">
+              <select [(ngModel)]="newSkill.name" name="skillName" class="input-sm">
+                <option value="">-- Domaine --</option>
+                <option *ngFor="let domain of skillDomains" [value]="domain">{{ domain.replace('_', ' ') }}</option>
+              </select>
+              <input type="text" [(ngModel)]="newSkill.level" name="skillLevel" placeholder="Niveau" class="input-sm">
+              <input type="number" [(ngModel)]="newSkill.yearsOfExperience" name="skillYears" placeholder="Années" class="input-sm" min="0">
+              <button type="button" class="btn-add" (click)="addSkill()"><i class="fas fa-plus"></i> Ajouter</button>
+            </div>
+          </div>
+          <div class="items-list" *ngIf="updateRequest.skills && updateRequest.skills.length > 0">
+            <div class="item-tag" *ngFor="let skill of updateRequest.skills; let i = index">
+              <span>{{ skill.name }}{{ skill.level ? ' – ' + skill.level : '' }}{{ skill.yearsOfExperience ? ' (' + skill.yearsOfExperience + ' an(s))' : '' }}</span>
+              <button type="button" class="item-remove" (click)="removeSkill(i)"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-briefcase"></i> Portfolio</h3>
+          <div class="field">
+            <label>Ajouter un projet</label>
+            <div class="add-item-form">
+              <input type="text" [(ngModel)]="newPortfolioItem.title" name="portfolioTitle" placeholder="Titre *" required>
+              <textarea [(ngModel)]="newPortfolioItem.description" name="portfolioDesc" placeholder="Description" rows="2"></textarea>
+              <input type="url" [(ngModel)]="newPortfolioItem.url" name="portfolioUrl" placeholder="URL du projet">
+              <input type="text" [(ngModel)]="newPortfolioItem.technologies" name="portfolioTech" placeholder="Technologies (séparées par des virgules)">
+              <button type="button" class="btn-add" (click)="addPortfolioItem()"><i class="fas fa-plus"></i> Ajouter</button>
+            </div>
+          </div>
+          <div class="items-list" *ngIf="updateRequest.portfolioItems && updateRequest.portfolioItems.length > 0">
+            <div class="item-tag item-tag--block" *ngFor="let item of updateRequest.portfolioItems; let i = index">
+              <div><strong>{{ item.title }}</strong><span *ngIf="item.description"> – {{ item.description }}</span></div>
+              <button type="button" class="item-remove" (click)="removePortfolioItem(i)"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-language"></i> Langues</h3>
+          <div class="field">
+            <label>Ajouter une langue</label>
+            <div class="add-item-row">
+              <input type="text" [(ngModel)]="newLanguage.name" name="langName" placeholder="Langue" class="input-sm">
+              <input type="text" [(ngModel)]="newLanguage.code" name="langCode" placeholder="Code" class="input-sm">
+              <input type="text" [(ngModel)]="newLanguage.proficiency" name="langProf" placeholder="Niveau" class="input-sm">
+              <button type="button" class="btn-add" (click)="addLanguage()"><i class="fas fa-plus"></i> Ajouter</button>
+            </div>
+          </div>
+          <div class="items-list" *ngIf="updateRequest.languages && updateRequest.languages.length > 0">
+            <div class="item-tag" *ngFor="let lang of updateRequest.languages; let i = index">
+              <span>{{ lang.name }}{{ lang.proficiency ? ' – ' + lang.proficiency : '' }}</span>
+              <button type="button" class="item-remove" (click)="removeLanguage(i)"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3><i class="fas fa-share-alt"></i> Réseaux sociaux</h3>
+          <div class="field">
+            <label>Ajouter un lien</label>
+            <div class="add-item-row">
+              <input type="text" [(ngModel)]="newSocialLink.platform" name="socialPlatform" placeholder="Plateforme" class="input-sm">
+              <input type="url" [(ngModel)]="newSocialLink.url" name="socialUrl" placeholder="URL *" required class="input-sm">
+              <button type="button" class="btn-add" (click)="addSocialLink()"><i class="fas fa-plus"></i> Ajouter</button>
+            </div>
+          </div>
+          <div class="items-list" *ngIf="updateRequest.socialLinks && updateRequest.socialLinks.length > 0">
+            <div class="item-tag" *ngFor="let link of updateRequest.socialLinks; let i = index">
+              <span>{{ link.platform }}: {{ link.url }}</span>
+              <button type="button" class="item-remove" (click)="removeSocialLink(i)"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn--secondary" (click)="cancelEdit()" [disabled]="loading">
+            <i class="fas fa-times"></i> Annuler
+          </button>
+          <button type="submit" class="btn btn--primary" [disabled]="loading">
+            <i class="fas fa-save" *ngIf="!loading"></i>
+            <i class="fas fa-spinner fa-spin" *ngIf="loading"></i>
+            {{ loading ? 'Enregistrement...' : 'Enregistrer' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Abonnés / Abonnements -->
+<div class="modal-overlay" *ngIf="showFollowModal" (click)="closeFollowModal()">
+  <div class="modal-content modal-follow" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ showFollowModal === 'followers' ? 'Abonnés' : 'Abonnements' }}</h2>
+      <button type="button" class="modal-close" (click)="closeFollowModal()" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="loadingFollowList" class="follow-loading"><i class="fas fa-spinner fa-spin"></i> Chargement...</div>
+      <div *ngIf="!loadingFollowList && followList.length === 0" class="follow-empty">Aucun utilisateur.</div>
+      <div *ngIf="!loadingFollowList && followList.length > 0" class="follow-list">
+        <a *ngFor="let u of followList" [routerLink]="['/user', u.id]" class="follow-item" (click)="closeFollowModal()">
+          <div class="follow-avatar" [style.background-image]="u.profilePicture ? 'url(' + u.profilePicture + ')' : 'none'">
+            <span *ngIf="!u.profilePicture">{{ (u.username || '?')[0] | uppercase }}</span>
+          </div>
+          <span class="follow-username">{{ u.username }}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,217 @@
+# Docker Compose v2+ — pas de container_name : évite les conflits avec d'anciens conteneurs.
+# Ports hôte : Eureka UI http://localhost:18761 (interne conteneur 8761), MySQL 3307, Postgres collab 5434,
+#             Keycloak 8180, user-service 18081, service-test 18089, collaboration 8888, api-gateway 18090, frontend 4200
+# Collaboration = Symfony (PHP) : pas d’enregistrement Eureka (normal). Routage gateway = GATEWAY_COLLABORATION_URI.
+
+services:
+
+  eureka-server:
+    build: ./Eureka
+    image: brahim2002/eureka:latest
+    pull_policy: build
+    ports:
+      - "18761:8761"
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports:
+      - "5672:5672"   # AMQP protocol port
+      - "15672:15672" # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 25s
+
+  postgres-collab:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: collab
+      POSTGRES_PASSWORD: collab
+      POSTGRES_DB: collaboration_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-collab-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U collab -d collaboration_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0.7
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: "8080"
+      KC_HOSTNAME_STRICT: "false"
+    ports:
+      - "8180:8080"
+
+  user-service:
+    build: ./services/backend1
+    image: brahim2002/user-service:latest
+    pull_policy: build
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "18081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/freelance_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+      EUREKA_CLIENT_FETCH_REGISTRY: "true"
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 120s
+
+  service-test:
+    build: ./services/testService/service-test
+    image: brahim2002/service-test:latest
+    pull_policy: build
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "18089:8089"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/freelancify?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+      EUREKA_CLIENT_FETCH_REGISTRY: "true"
+      USER_SERVICE_URL: http://user-service:8081
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+
+  complaints-service:
+    build: ./services/complaints-service
+    image: brahim2002/complaints-service:latest
+    pull_policy: build
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+    ports:
+      - "18092:8092"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/freelancify?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+      EUREKA_CLIENT_FETCH_REGISTRY: "true"
+
+  collaboration-service:
+    build: ./services/collaborationService
+    pull_policy: build
+    depends_on:
+      postgres-collab:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    ports:
+      - "8888:80"
+    environment:
+      APP_ENV: prod
+      APP_SECRET: collaboration_app_secret_replace_in_prod_minimum_32c
+      # Pas de charset=utf8 (PostgreSQL / DBAL : peut poser problème selon versions)
+      DATABASE_URL: postgresql://collab:collab@postgres-collab:5432/collaboration_db?serverVersion=16
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_REALM: projetpidev
+      # Évite doctrine:// pour async (table messenger_messages non requise pour cette API)
+      MESSENGER_TRANSPORT_DSN: sync://
+
+  api-gateway:
+    build: ./ApiGateway4sae2
+    image: brahim2002/api-gateway:latest
+    pull_policy: build
+    depends_on:
+      eureka-server:
+        condition: service_started
+      user-service:
+        condition: service_healthy
+      service-test:
+        condition: service_started
+      collaboration-service:
+        condition: service_started
+    ports:
+      - "18090:8090"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+      EUREKA_CLIENT_FETCH_REGISTRY: "true"
+      # Routage HTTP direct (réseau Compose) : évite les 503 lb:// si Eureka est lent ou vide.
+      GATEWAY_USER_SERVICE_URI: http://user-service:8081
+      GATEWAY_SERVICE_TEST_URI: http://service-test:8089
+      GATEWAY_COLLABORATION_URI: http://collaboration-service:80
+
+  frontend:
+    build: ./frontend
+    image: brahim2002/frontend:latest
+    pull_policy: build
+    depends_on:
+      api-gateway:
+        condition: service_started
+      keycloak:
+        condition: service_started
+    ports:
+      - "4200:80"
+
+volumes:
+  mysql-data:
+  postgres-collab-data:
+  rabbitmq-data:

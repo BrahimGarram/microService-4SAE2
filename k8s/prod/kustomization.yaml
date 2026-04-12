@@ -1,0 +1,37 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: microservices
+
+resources:
+  - ../base/namespace.yaml
+  - ../base/eureka-deployment.yaml
+  - ../base/mysql-deployment.yaml
+  - ../base/rabbitmq-deployment.yaml
+  - ../base/user-service-deployment.yaml
+  - ../base/api-gateway-deployment.yaml
+
+replicas:
+  - name: user-service
+    count: 3
+  - name: api-gateway
+    count: 3
+
+commonLabels:
+  environment: production
+
+# Production-specific resource limits
+patches:
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+    target:
+      kind: Deployment
+      name: user-service

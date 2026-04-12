@@ -1,0 +1,163 @@
+<div class="test-intro-page">
+  <div class="test-intro-card">
+    <header class="intro-header">
+      <div class="intro-icon">
+        <i class="fas fa-clipboard-check"></i>
+      </div>
+      <h1>Qualification Test</h1>
+      <p class="intro-lead">Verify your level to join the Freelancify platform.</p>
+    </header>
+
+    <div *ngIf="loading" class="intro-loading">
+      <div class="spinner"></div>
+      <p>Loading...</p>
+    </div>
+
+    <div *ngIf="!loading" class="intro-body">
+      <div class="greeting-block">
+        <p class="greeting">Hello <strong>{{ username }}</strong>,</p>
+        <p class="intro-desc">
+          You are about to take a test to verify that you are qualified to join our platform. Please read the rules below before starting.
+        </p>
+      </div>
+
+      <div class="rules-section">
+        <h2 class="rules-title">Test Rules</h2>
+        <div class="rule rule-important">
+          <span class="rule-icon"><i class="fas fa-video"></i></span>
+          <div class="rule-content">
+            <strong>Camera required</strong> — If you do not enable your camera, you cannot enter the test. You must allow camera access to start.
+          </div>
+        </div>
+        <div class="rule rule-important">
+          <span class="rule-icon"><i class="fas fa-user"></i></span>
+          <div class="rule-content">
+            <strong>Stay alone</strong> — No other persons may be in the frame. Only you must be visible during the entire test.
+          </div>
+        </div>
+        <div class="rule rule-important">
+          <span class="rule-icon"><i class="fas fa-eye"></i></span>
+          <div class="rule-content">
+            <strong>Do not hide your face</strong> — Keep your face visible in the frame at all times. Do not cover the camera or turn away.
+          </div>
+        </div>
+        <div class="rule rule-warning">
+          <span class="rule-icon"><i class="fas fa-lock"></i></span>
+          <div class="rule-content">
+            <strong>Do not leave the page</strong> — Once the test has started, stay on this page until the end. Leaving will cancel your attempt and record it as abandonment or fraud.
+          </div>
+        </div>
+        <div class="rule rule-success">
+          <span class="rule-icon"><i class="fas fa-check"></i></span>
+          <div class="rule-content">
+            <strong>Pass</strong> — If you pass the test, you will be validated and will not be able to retake it.
+          </div>
+        </div>
+        <div class="rule rule-warning">
+          <span class="rule-icon"><i class="fas fa-times"></i></span>
+          <div class="rule-content">
+            <strong>Abandonment</strong> — If you leave the page before the end, the attempt will be counted as a failure.
+          </div>
+        </div>
+        <div class="rule rule-info">
+          <span class="rule-icon"><i class="fas fa-info"></i></span>
+          <div class="rule-content">
+            <strong>Maximum 3 attempts</strong> — After 3 failures, you will no longer be able to retake the test.
+          </div>
+        </div>
+      </div>
+
+      <!-- Sandbox CODING -->
+      <section class="sandbox-section">
+        <h2 class="sandbox-title"><i class="fas fa-code"></i> CODING section & practice editor</h2>
+        <p class="sandbox-desc">
+          Part of the test includes <strong>CODING</strong> questions: you will need to write code and run it with the <strong>Run</strong> button.
+          To get familiar with the editor before the test, use the mini editor below. This <strong>sandbox</strong> is for practice only:
+          the code you run here <strong>is not saved</strong> and <strong>does not affect your score</strong>.
+        </p>
+
+        <div class="sandbox-editor-card">
+          <div class="sandbox-editor-header">
+            <div class="sandbox-lang-row">
+              <span class="sandbox-lang-badge"><i class="fas fa-code"></i> {{ sandboxConfig[sandboxLanguage].label }} — sample exercise</span>
+              <div class="sandbox-lang-selector">
+                <button type="button" class="sandbox-lang-btn" [class.active]="sandboxLanguage === 'java'" (click)="setSandboxLanguage('java')">Java</button>
+                <button type="button" class="sandbox-lang-btn" [class.active]="sandboxLanguage === 'python'" (click)="setSandboxLanguage('python')">Python</button>
+                <button type="button" class="sandbox-lang-btn" [class.active]="sandboxLanguage === 'javascript'" (click)="setSandboxLanguage('javascript')">JavaScript</button>
+              </div>
+            </div>
+            <span class="sandbox-hint">{{ sandboxConfig[sandboxLanguage].description }}</span>
+          </div>
+          <textarea
+            class="sandbox-textarea"
+            [(ngModel)]="sandboxCode"
+            rows="10"
+            spellcheck="false"
+          ></textarea>
+          <div class="sandbox-actions">
+            <button type="button" class="btn-primary" (click)="runSandbox()" [disabled]="sandboxLoading">
+              <i class="fas fa-play" *ngIf="!sandboxLoading"></i>
+              <span class="spinner-small" *ngIf="sandboxLoading"></span>
+              {{ sandboxLoading ? 'Running...' : 'Run my code' }}
+            </button>
+          </div>
+          <div *ngIf="sandboxResult" class="sandbox-result" [ngClass]="sandboxResult.success ? 'sandbox-result-success' : 'sandbox-result-error'">
+            <p class="sandbox-result-msg">
+              {{ sandboxResult.message || (sandboxResult.success ? 'Code executed successfully.' : 'Error during execution.') }}
+              <ng-container *ngIf="sandboxResult.totalCount">
+                — {{ sandboxResult.passedCount }} / {{ sandboxResult.totalCount }} test cases passed ({{ sandboxResult.score }}%).
+              </ng-container>
+            </p>
+            <pre *ngIf="sandboxResult.stdout" class="sandbox-stdout">{{ sandboxResult.stdout }}</pre>
+            <pre *ngIf="sandboxResult.stderr" class="sandbox-stderr">{{ sandboxResult.stderr }}</pre>
+          </div>
+        </div>
+      </section>
+
+      <div *ngIf="message" class="intro-alert" [ngClass]="messageType === 'success' ? 'intro-alert-success' : (messageType === 'warning' ? 'intro-alert-warning' : 'intro-alert-info')">
+        <i class="fas" [ngClass]="messageType === 'success' ? 'fa-trophy' : (messageType === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle')"></i>
+        <p>{{ message }}</p>
+      </div>
+      <div *ngIf="errorMessage" class="intro-alert intro-alert-error">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>{{ errorMessage }}</p>
+      </div>
+
+      <!-- Rules confirmation modal -->
+      <div class="rules-modal-overlay" *ngIf="showRulesModal" (click)="closeRulesModal()">
+        <div class="rules-modal" (click)="$event.stopPropagation()">
+          <h2><i class="fas fa-clipboard-check"></i> Confirmation</h2>
+          <p>By clicking "Start", you confirm that you have read and accepted the test rules (camera on, stay alone, keep your face visible, do not leave the page).</p>
+          <label class="rules-checkbox">
+            <input type="checkbox" [(ngModel)]="rulesAccepted" name="rulesAccepted" />
+            <span>I have read and accepted the rules</span>
+          </label>
+          <div class="rules-modal-actions">
+            <button type="button" class="btn-secondary" (click)="closeRulesModal()">Cancel</button>
+            <button type="button" class="btn-primary" [disabled]="!rulesAccepted || starting" (click)="confirmAndStartTest()">
+              <i class="fas fa-play" *ngIf="!starting"></i>
+              <span class="spinner-small" *ngIf="starting"></span>
+              {{ starting ? 'Starting...' : 'Start the test' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="intro-actions">
+        <button
+          *ngIf="canStartTest"
+          class="btn-primary"
+          [disabled]="starting"
+          (click)="startTest()"
+        >
+          <i class="fas fa-play" *ngIf="!starting"></i>
+          <span class="spinner-small" *ngIf="starting"></span>
+          {{ starting ? 'Starting...' : 'Start the test' }}
+        </button>
+        <a routerLink="/" class="btn-secondary">
+          <i class="fas fa-arrow-left"></i> Back to home
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,24 @@
+# CORS : un seul jeu d'en-têtes (filtre Java supprime ceux des backends puis ajoute ceux du gateway)
+spring:
+  # Uploads collaboration (multipart) : évite DataBufferLimitException côté gateway
+  codec:
+    max-in-memory-size: 64MB
+  cloud:
+    gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:4200"
+              - "http://127.0.0.1:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600

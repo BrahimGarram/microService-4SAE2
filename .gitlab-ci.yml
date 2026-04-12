@@ -1,0 +1,146 @@
+stages:
+  - build
+  - test
+  - deploy-dev
+  - deploy-staging
+  - deploy-prod
+
+variables:
+  DOCKER_REGISTRY: docker.io
+  DOCKER_USER: brahim2002
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+# Build stage - Build Docker images
+build-eureka:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - cd Eureka
+    - docker build -t $DOCKER_REGISTRY/$DOCKER_USER/eureka:$CI_COMMIT_SHORT_SHA .
+    - docker tag $DOCKER_REGISTRY/$DOCKER_USER/eureka:$CI_COMMIT_SHORT_SHA $DOCKER_REGISTRY/$DOCKER_USER/eureka:latest
+    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin
+    - docker push $DOCKER_REGISTRY/$DOCKER_USER/eureka:$CI_COMMIT_SHORT_SHA
+    - docker push $DOCKER_REGISTRY/$DOCKER_USER/eureka:latest
+  only:
+    - main
+    - develop
+
+build-user-service:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - cd services/backend1
+    - docker build -t $DOCKER_REGISTRY/$DOCKER_USER/user-service:$CI_COMMIT_SHORT_SHA .
+    - docker tag $DOCKER_REGISTRY/$DOCKER_USER/user-service:$CI_COMMIT_SHORT_SHA $DOCKER_REGISTRY/$DOCKER_USER/user-service:latest
+    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin
+    - docker push $DOCKER_REGISTRY/$DOCKER_USER/user-service:$CI_COMMIT_SHORT_SHA
+    - docker push $DOCKER_REGISTRY/$DOCKER_USER/user-service:latest
+  only:
+    - main
+    - develop
+
+build-api-gateway:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - cd ApiGateway4sae2
+    - docker build -t $DOCKER_REGISTRY/$DOCKER_USER/api-gateway:$CI_COMMIT_SHORT_SHA .
+    - docker tag $DOCKER_REGISTRY/$DOCKER_USER/api-gateway:$CI_COMMIT_SHORT_SHA $DOCKER_REGISTRY/$DOCKER_USER/api-gateway:latest
+    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin
+    - docker push $DOCKER_REGISTRY/$DOCKER_USER/api-gateway:$CI_COMMIT_SHORT_SHA
+    - docker push $DOCKER_REGISTRY/$DOCKER_USER/api-gateway:latest
+  only:
+    - main
+    - develop
+
+build-complaints-service:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - cd services/complaints-service
+    - docker build -t $DOCKER_REGISTRY/$DOCKER_USER/complaints-service:$CI_COMMIT_SHORT_SHA .
+    - docker tag $DOCKER_REGISTRY/$DOCKER_USER/complaints-service:$CI_COMMIT_SHORT_SHA $DOCKER_REGISTRY/$DOCKER_USER/complaints-service:latest
+    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin
+    - docker push $DOCKER_REGISTRY/$DOCKER_USER/complaints-service:$CI_COMMIT_SHORT_SHA
+    - docker push $DOCKER_REGISTRY/$DOCKER_USER/complaints-service:latest
+  only:
+    - main
+    - develop
+
+# Test stage
+test-user-service:
+  stage: test
+  image: maven:3.9.9-eclipse-temurin-17
+  script:
+    - cd services/backend1
+    - mvn clean test
+  only:
+    - main
+    - develop
+  cache:
+    paths:
+      - .m2/repository
+
+# Deploy to DEV environment
+deploy-dev:
+  stage: deploy-dev
+  image: bitnami/kubectl:latest
+  script:
+    - kubectl config use-context dev-cluster
+    - kubectl apply -f k8s/base/namespace.yaml
+    - kubectl apply -f k8s/base/
+    - kubectl set image deployment/user-service user-service=$DOCKER_REGISTRY/$DOCKER_USER/user-service:$CI_COMMIT_SHORT_SHA -n microservices
+    - kubectl set image deployment/api-gateway api-gateway=$DOCKER_REGISTRY/$DOCKER_USER/api-gateway:$CI_COMMIT_SHORT_SHA -n microservices
+    - kubectl rollout status deployment/user-service -n microservices
+    - kubectl rollout status deployment/api-gateway -n microservices
+  environment:
+    name: development
+    url: http://dev.example.com
+  only:
+    - develop
+
+# Deploy to STAGING environment
+deploy-staging:
+  stage: deploy-staging
+  image: bitnami/kubectl:latest
+  script:
+    - kubectl config use-context staging-cluster
+    - kubectl apply -f k8s/base/namespace.yaml
+    - kubectl apply -f k8s/staging/
+    - kubectl set image deployment/user-service user-service=$DOCKER_REGISTRY/$DOCKER_USER/user-service:$CI_COMMIT_SHORT_SHA -n microservices
+    - kubectl set image deployment/api-gateway api-gateway=$DOCKER_REGISTRY/$DOCKER_USER/api-gateway:$CI_COMMIT_SHORT_SHA -n microservices
+    - kubectl rollout status deployment/user-service -n microservices
+    - kubectl rollout status deployment/api-gateway -n microservices
+  environment:
+    name: staging
+    url: http://staging.example.com
+  only:
+    - main
+  when: manual
+
+# Deploy to PRODUCTION environment
+deploy-prod:
+  stage: deploy-prod
+  image: bitnami/kubectl:latest
+  script:
+    - kubectl config use-context prod-cluster
+    - kubectl apply -f k8s/base/namespace.yaml
+    - kubectl apply -f k8s/prod/
+    - kubectl set image deployment/user-service user-service=$DOCKER_REGISTRY/$DOCKER_USER/user-service:$CI_COMMIT_SHORT_SHA -n microservices
+    - kubectl set image deployment/api-gateway api-gateway=$DOCKER_REGISTRY/$DOCKER_USER/api-gateway:$CI_COMMIT_SHORT_SHA -n microservices
+    - kubectl rollout status deployment/user-service -n microservices
+    - kubectl rollout status deployment/api-gateway -n microservices
+  environment:
+    name: production
+    url: http://prod.example.com
+  only:
+    - main
+  when: manual

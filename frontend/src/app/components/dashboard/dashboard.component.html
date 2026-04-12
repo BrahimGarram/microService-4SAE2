@@ -1,0 +1,336 @@
+<div class="dashboard-content">
+  <div class="dashboard-header">
+    <h1>Dashboard</h1>
+    <button class="refresh-btn" (click)="refreshStats()" [disabled]="loading">
+      <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading statistics...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-container">
+    <i class="fas fa-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+    <button class="retry-btn" (click)="refreshStats()">Retry</button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div *ngIf="stats && !loading" class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #FF6B35, #FF5722); color: white;">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="stat-info">
+        <div class="stat-header">
+          <h3>{{ stats.realTimeStats.totalUsers | number }}</h3>
+          <span class="stat-change" [class.positive]="stats.realTimeStats.totalUsersChange >= 0" 
+                [class.negative]="stats.realTimeStats.totalUsersChange < 0">
+            <i class="fas" [class.fa-arrow-up]="stats.realTimeStats.totalUsersChange >= 0" 
+               [class.fa-arrow-down]="stats.realTimeStats.totalUsersChange < 0"></i>
+            {{ Math.abs(stats.realTimeStats.totalUsersChange) | number:'1.1-1' }}%
+          </span>
+        </div>
+        <p>Total Users</p>
+        <span class="stat-period">vs last month</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #4299e1, #3182ce); color: white;">
+        <i class="fas fa-user-plus"></i>
+      </div>
+      <div class="stat-info">
+        <div class="stat-header">
+          <h3>{{ stats.realTimeStats.newUsersThisMonth | number }}</h3>
+          <span class="stat-change" [class.positive]="stats.realTimeStats.newUsersChange >= 0" 
+                [class.negative]="stats.realTimeStats.newUsersChange < 0">
+            <i class="fas" [class.fa-arrow-up]="stats.realTimeStats.newUsersChange >= 0" 
+               [class.fa-arrow-down]="stats.realTimeStats.newUsersChange < 0"></i>
+            {{ Math.abs(stats.realTimeStats.newUsersChange) | number:'1.1-1' }}%
+          </span>
+        </div>
+        <p>New Users This Month</p>
+        <span class="stat-period">vs last month</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #FF6B35, #E55A2B); color: white;">
+        <i class="fas fa-user-check"></i>
+      </div>
+      <div class="stat-info">
+        <div class="stat-header">
+          <h3>{{ stats.realTimeStats.activeUsersToday | number }}</h3>
+          <span class="stat-change" [class.positive]="stats.realTimeStats.activeUsersChange >= 0" 
+                [class.negative]="stats.realTimeStats.activeUsersChange < 0">
+            <i class="fas" [class.fa-arrow-up]="stats.realTimeStats.activeUsersChange >= 0" 
+               [class.fa-arrow-down]="stats.realTimeStats.activeUsersChange < 0"></i>
+            {{ Math.abs(stats.realTimeStats.activeUsersChange) | number:'1.1-1' }}%
+          </span>
+        </div>
+        <p>Active Users Today</p>
+        <span class="stat-period">vs last month</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #ed8936, #dd6b20); color: white;">
+        <i class="fas fa-briefcase"></i>
+      </div>
+      <div class="stat-info">
+        <div class="stat-header">
+          <h3>{{ stats.realTimeStats.projectsInProgress | number }}</h3>
+          <span class="stat-change" [class.positive]="stats.realTimeStats.projectsChange >= 0" 
+                [class.negative]="stats.realTimeStats.projectsChange < 0">
+            <i class="fas" [class.fa-arrow-up]="stats.realTimeStats.projectsChange >= 0" 
+               [class.fa-arrow-down]="stats.realTimeStats.projectsChange < 0"></i>
+            {{ Math.abs(stats.realTimeStats.projectsChange) | number:'1.1-1' }}%
+          </span>
+        </div>
+        <p>Projects In Progress</p>
+        <span class="stat-period">vs last month</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: linear-gradient(135deg, #48bb78, #38a169); color: white;">
+        <i class="fas fa-dollar-sign"></i>
+      </div>
+      <div class="stat-info">
+        <div class="stat-header">
+          <h3>{{ formatCurrency(stats.realTimeStats.totalRevenue) }}</h3>
+          <span class="stat-change" [class.positive]="stats.realTimeStats.revenueChange >= 0" 
+                [class.negative]="stats.realTimeStats.revenueChange < 0">
+            <i class="fas" [class.fa-arrow-up]="stats.realTimeStats.revenueChange >= 0" 
+               [class.fa-arrow-down]="stats.realTimeStats.revenueChange < 0"></i>
+            {{ Math.abs(stats.realTimeStats.revenueChange) | number:'1.1-1' }}%
+          </span>
+        </div>
+        <p>Total Revenue</p>
+        <span class="stat-period">vs last month</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div *ngIf="stats && !loading" class="charts-grid">
+    <!-- User Growth Line Chart -->
+    <div class="chart-card">
+      <div class="card-header">
+        <h2>User Growth</h2>
+        <span class="chart-subtitle">Last 6 months</span>
+      </div>
+      <div class="chart-container">
+        <canvas #userGrowthChart></canvas>
+      </div>
+    </div>
+
+    <!-- Role Distribution Pie Chart -->
+    <div class="chart-card">
+      <div class="card-header">
+        <h2>Role Distribution</h2>
+        <span class="chart-subtitle">Users by role</span>
+      </div>
+      <div class="chart-container">
+        <canvas #roleDistributionChart></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Chart -->
+  <div *ngIf="stats && !loading" class="charts-grid">
+    <div class="chart-card">
+      <div class="card-header">
+        <h2>Activity Overview</h2>
+        <span class="chart-subtitle">Last 7 days</span>
+      </div>
+      <div class="chart-container">
+        <canvas #activityChart></canvas>
+      </div>
+    </div>
+
+    <!-- Performance Indicators -->
+    <div class="chart-card">
+      <div class="card-header">
+        <h2>Performance Indicators</h2>
+        <span class="chart-subtitle">Key metrics</span>
+      </div>
+      <div class="performance-indicators">
+        <div class="indicator-item">
+          <div class="indicator-icon" style="background: rgba(255, 107, 53, 0.1); color: #FF6B35;">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="indicator-info">
+            <span class="indicator-label">Conversion Rate</span>
+            <span class="indicator-value">{{ stats.performanceIndicators.conversionRate | number:'1.1-1' }}%</span>
+          </div>
+        </div>
+        <div class="indicator-item">
+          <div class="indicator-icon" style="background: rgba(66, 153, 225, 0.1); color: #4299e1;">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="indicator-info">
+            <span class="indicator-label">Avg Session Time</span>
+            <span class="indicator-value">{{ stats.performanceIndicators.averageSessionTime | number:'1.1-1' }} min</span>
+          </div>
+        </div>
+        <div class="indicator-item">
+          <div class="indicator-icon" style="background: rgba(237, 137, 54, 0.1); color: #ed8936;">
+            <i class="fas fa-redo"></i>
+          </div>
+          <div class="indicator-info">
+            <span class="indicator-label">Retention Rate</span>
+            <span class="indicator-value">{{ stats.performanceIndicators.retentionRate | number:'1.1-1' }}%</span>
+          </div>
+        </div>
+        <div class="indicator-item">
+          <div class="indicator-icon" style="background: rgba(72, 187, 120, 0.1); color: #48bb78;">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="indicator-info">
+            <span class="indicator-label">Completion Rate</span>
+            <span class="indicator-value">{{ stats.performanceIndicators.completionRate | number:'1.1-1' }}%</span>
+          </div>
+        </div>
+        <div class="indicator-item">
+          <div class="indicator-icon" style="background: rgba(255, 107, 53, 0.1); color: #FF6B35;">
+            <i class="fas fa-check-double"></i>
+          </div>
+          <div class="indicator-info">
+            <span class="indicator-label">Completed Projects</span>
+            <span class="indicator-value">{{ stats.performanceIndicators.completedProjects | number }}</span>
+          </div>
+        </div>
+        <div class="indicator-item">
+          <div class="indicator-icon" style="background: rgba(229, 62, 62, 0.1); color: #e53e3e;">
+            <i class="fas fa-times-circle"></i>
+          </div>
+          <div class="indicator-info">
+            <span class="indicator-label">Cancelled Projects</span>
+            <span class="indicator-value">{{ stats.performanceIndicators.cancelledProjects | number }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Geographic Statistics -->
+  <div *ngIf="stats && !loading && stats.topCountries.length > 0" class="widgets-grid">
+    <div class="widget-card">
+      <div class="widget-header">
+        <h3>Top Countries</h3>
+        <i class="fas fa-globe"></i>
+      </div>
+      <div class="countries-list">
+        <div class="country-item" *ngFor="let country of stats.topCountries; let i = index">
+          <div class="country-rank">{{ i + 1 }}</div>
+          <div class="country-name">{{ country.country }}</div>
+          <div class="country-stats">
+            <span class="country-count">{{ country.userCount | number }} users</span>
+            <span class="country-percentage">{{ country.percentage | number:'1.1-1' }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Projects Section -->
+  <div class="widgets-grid">
+    <div class="widget-card projects-widget">
+      <div class="widget-header">
+        <div>
+          <h3>Recent Projects</h3>
+          <p class="widget-subtitle">Latest projects on the platform</p>
+        </div>
+        <div class="widget-header-actions">
+          <button class="refresh-projects-btn" (click)="loadProjects()" title="Refresh projects">
+            <i class="fas fa-sync-alt" [class.fa-spin]="projectsLoading"></i>
+          </button>
+          <button class="view-all-btn" (click)="navigateToProjects()">
+            <i class="fas fa-arrow-right"></i> View All
+          </button>
+        </div>
+      </div>
+      <div *ngIf="projectsLoading" class="projects-loading">
+        <i class="fas fa-spinner fa-spin"></i> Loading projects...
+      </div>
+      <div *ngIf="projectsError && !projectsLoading" class="projects-error">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>{{ projectsError }}</p>
+        <div class="error-help">
+          <p><strong>To fix this:</strong></p>
+          <ol>
+            <li>Go to <code>project-service</code> folder</li>
+            <li>Run <code>run.bat</code> or <code>mvn spring-boot:run</code></li>
+            <li>Wait for "Started ProjectServiceApplication" message</li>
+            <li>Click "Retry" button below</li>
+          </ol>
+        </div>
+        <button class="retry-btn" (click)="loadProjects()">
+          <i class="fas fa-redo"></i> Retry
+        </button>
+      </div>
+      <div *ngIf="!projectsLoading && !projectsError && projects.length > 0" class="projects-list">
+        <div class="project-item" *ngFor="let project of projects; trackBy: trackByProjectId">
+          <div class="project-item-header">
+            <div class="project-item-title">
+              <i class="fas fa-briefcase"></i>
+              <span>{{ project.title }}</span>
+            </div>
+            <span class="project-status-badge" [class]="getStatusClass(project.status)">
+              {{ getStatusDisplay(project.status) }}
+            </span>
+          </div>
+          <div class="project-item-details">
+            <span *ngIf="project.budget"><i class="fas fa-dollar-sign"></i> {{ formatCurrency(project.budget) }}</span>
+            <span><i class="fas fa-calendar"></i> {{ formatDate(project.createdAt) }}</span>
+          </div>
+        </div>
+        <div *ngIf="projects.length >= 6 && !showAllProjects" class="show-more">
+          <button class="show-more-btn" (click)="toggleShowAllProjects()">
+            <i class="fas fa-chevron-down"></i> Show All Projects
+          </button>
+        </div>
+        <div *ngIf="showAllProjects && projects.length > 6" class="show-more">
+          <button class="show-more-btn" (click)="toggleShowAllProjects()">
+            <i class="fas fa-chevron-up"></i> Show Less
+          </button>
+        </div>
+      </div>
+      <div *ngIf="!projectsLoading && !projectsError && (!projects || projects.length === 0)" class="projects-empty">
+        <i class="fas fa-folder-open"></i>
+        <p>No projects found</p>
+        <p class="empty-hint">Create your first project to get started!</p>
+        <button class="action-btn" (click)="navigateToProjects()" style="background: linear-gradient(135deg, #4299e1, #3182ce);">
+          <i class="fas fa-plus"></i> Go to Projects
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div *ngIf="stats && !loading" class="widgets-grid">
+    <div class="widget-card">
+      <div class="widget-header">
+        <h3>Quick Actions</h3>
+        <i class="fas fa-bolt"></i>
+      </div>
+      <div class="quick-actions">
+        <button class="action-btn" (click)="navigateToUsers()" style="background: linear-gradient(135deg, #FF6B35, #FF5722);">
+          <i class="fas fa-user-plus"></i>
+          <span>Users</span>
+        </button>
+        <button class="action-btn" (click)="navigateToProjects()" style="background: linear-gradient(135deg, #4299e1, #3182ce);">
+          <i class="fas fa-briefcase"></i>
+          <span>Projects</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

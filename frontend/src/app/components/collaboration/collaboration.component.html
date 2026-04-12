@@ -1,0 +1,74 @@
+<div class="collab-page">
+  <div class="collab-hero">
+    <h1>Espace collaboration</h1>
+    <p class="lead">Publicités partenaires — déposez vos visuels ou vidéos après validation par l’équipe.</p>
+  </div>
+
+  <div *ngIf="restrictedMessage" class="alert alert-info restricted-banner" role="status">
+    <i class="fas fa-info-circle"></i>
+    <div>
+      <strong>Compte collaborateur</strong>
+      <p>Vous accédez uniquement à cet espace pour gérer vos publicités. Les autres services de la plateforme ne sont pas disponibles avec votre profil.</p>
+    </div>
+  </div>
+
+  <section class="card-block" *ngIf="canSubmitAds">
+    <h2><i class="fas fa-plus-circle"></i> Ajouter une publicité</h2>
+    <form (ngSubmit)="submit($event)" class="collab-form">
+      <div class="row">
+        <label>Type</label>
+        <select [(ngModel)]="form.type" name="ctype">
+          <option value="IMAGE">Image</option>
+          <option value="VIDEO">Vidéo</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>Priorité d’affichage</label>
+        <select [(ngModel)]="form.priority" name="cprio">
+          <option value="LOW">Basse — liste dans cet onglet</option>
+          <option value="MEDIUM">Moyenne — encart à droite (fermable)</option>
+          <option value="HIGH">Haute — fenêtre au chargement du site</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>Date de publication (optionnel)</label>
+        <input type="datetime-local" [(ngModel)]="form.publishedAt" name="cpub" />
+      </div>
+      <div class="row">
+        <label>Fichier</label>
+        <input type="file" (change)="onFileChange($event)" accept="image/*,video/*" />
+      </div>
+      <button type="submit" class="btn-submit" [disabled]="submitting">
+        {{ submitting ? 'Envoi…' : 'Envoyer pour validation' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="card-block" *ngIf="canSubmitAds">
+    <h2><i class="fas fa-list"></i> Mes demandes</h2>
+    <div *ngIf="mine.length === 0" class="empty">Aucune demande pour le moment.</div>
+    <ul class="mine-list" *ngIf="mine.length">
+      <li *ngFor="let m of mine">
+        <span class="badge" [class.pending]="m.status==='PENDING'" [class.ok]="m.status==='APPROVED'" [class.no]="m.status==='REJECTED'">
+          {{ statusLabel(m.status) }}
+        </span>
+        <span class="prio">{{ m.priority }}</span>
+        <span class="type">{{ m.type }}</span>
+        <span class="date">{{ m.createdAt | date:'short' }}</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="card-block">
+    <h2><i class="fas fa-photo-video"></i> Publicités actives (toutes priorités)</h2>
+    <div *ngIf="loading" class="empty">Chargement…</div>
+    <div *ngIf="!loading && allApproved.length === 0" class="empty">Aucune publicité approuvée pour le moment.</div>
+    <div class="grid" *ngIf="!loading && allApproved.length">
+      <div class="tile" *ngFor="let a of allApproved">
+        <img *ngIf="a.type === 'IMAGE'" [src]="mediaUrl(a)" alt="pub" />
+        <video *ngIf="a.type === 'VIDEO'" [src]="mediaUrl(a)" controls muted playsinline></video>
+        <span class="tile-cap">{{ a.priority }}</span>
+      </div>
+    </div>
+  </section>
+</div>

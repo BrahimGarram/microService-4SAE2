@@ -1,0 +1,335 @@
+<div class="project-dashboard-page">
+  <div class="dashboard-container" *ngIf="!loading && canAccess && project">
+    <header class="dashboard-header">
+      <button type="button" class="btn-back" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back to Projects
+      </button>
+      <h1 class="project-title">
+        <i class="fas fa-briefcase"></i> {{ project.title }}
+      </h1>
+      <p class="dashboard-subtitle">Project room – {{ isAdmin ? 'viewing as admin (read & join conversation)' : (isOwner ? 'communicate with your freelancer' : 'communicate with the client') }}</p>
+      <div *ngIf="isAdmin" class="admin-banner">
+        <i class="fas fa-shield-alt"></i>
+        <span>You are viewing this conversation as administrator. Your messages will be visible to both the client and the freelancer.</span>
+      </div>
+    </header>
+
+    <div class="dashboard-body">
+      <aside class="sidebar">
+        <div class="card project-card">
+          <h3 class="card-title"><i class="fas fa-info-circle"></i> Project</h3>
+          <div class="project-meta">
+            <div class="meta-row">
+              <span class="meta-label">Budget</span>
+              <span class="meta-value">{{ formatBudget(project.budget) }}</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Deadline</span>
+              <span class="meta-value">{{ formatDeadline(project.deadline) }}</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Status</span>
+              <span class="meta-value status-badge" [class]="'status-' + (project.status || '').toLowerCase()">{{ project.status }}</span>
+            </div>
+            <div class="meta-row" *ngIf="project.category">
+              <span class="meta-label">Category</span>
+              <span class="meta-value">{{ project.category }}</span>
+            </div>
+          </div>
+          <div class="description-block" *ngIf="project.description">
+            <button type="button" class="description-toggle" (click)="descriptionExpanded = !descriptionExpanded">
+              {{ descriptionExpanded ? 'Hide description' : 'Show description' }}
+              <i class="fas" [class.fa-chevron-up]="descriptionExpanded" [class.fa-chevron-down]="!descriptionExpanded"></i>
+            </button>
+            <div class="description-text" *ngIf="descriptionExpanded">{{ project.description }}</div>
+            <p class="description-preview" *ngIf="!descriptionExpanded">{{ descriptionShort(project.description) }}</p>
+          </div>
+          <button type="button" class="btn-view-project" (click)="viewProject()">
+            <i class="fas fa-external-link-alt"></i> View full project
+          </button>
+        </div>
+
+        <div class="card participants-card">
+          <h3 class="card-title"><i class="fas fa-users"></i> Participants</h3>
+          <div class="participants-list">
+            <div class="participant" *ngIf="clientUser">
+              <div class="avatar" [class.you]="currentUser?.id === clientUser.id" [style.background-image]="clientUser.profilePicture ? 'url(' + clientUser.profilePicture + ')' : 'none'">
+                <span *ngIf="!clientUser.profilePicture">{{ (clientUser.username || '').slice(0,1) | uppercase }}</span>
+              </div>
+              <div class="participant-info">
+                <span class="name">{{ clientUser.username }}</span>
+                <span class="role">Client</span>
+              </div>
+            </div>
+            <div class="participant" *ngIf="freelancerUser">
+              <div class="avatar" [class.you]="currentUser?.id === freelancerUser.id" [style.background-image]="freelancerUser.profilePicture ? 'url(' + freelancerUser.profilePicture + ')' : 'none'">
+                <span *ngIf="!freelancerUser.profilePicture">{{ (freelancerUser.username || '').slice(0,1) | uppercase }}</span>
+              </div>
+              <div class="participant-info">
+                <span class="name">{{ freelancerUser.username }}</span>
+                <span class="role">Freelancer</span>
+              </div>
+            </div>
+            <div class="participant" *ngIf="isAdmin && currentUser">
+              <div class="avatar you" [style.background-image]="currentUser.profilePicture ? 'url(' + currentUser.profilePicture + ')' : 'none'">
+                <span *ngIf="!currentUser.profilePicture">{{ (currentUser.username || '').slice(0,1) | uppercase }}</span>
+              </div>
+              <div class="participant-info">
+                <span class="name">{{ currentUser.username }}</span>
+                <span class="role">Admin</span>
+              </div>
+            </div>
+          </div>
+          <div class="accepted-terms" *ngIf="acceptedProposal">
+            <span class="accepted-label">Accepted terms</span>
+            <span class="accepted-value">{{ formatBudget(acceptedProposal.amount) }}<span *ngIf="acceptedProposal.proposedDeadline"> · {{ formatDeadline(acceptedProposal.proposedDeadline) }}</span></span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <div class="feed-tabs">
+          <button type="button" class="tab" [class.active]="feedFilter === 'all'" (click)="feedFilter = 'all'">
+            <i class="fas fa-stream"></i> All
+          </button>
+          <button type="button" class="tab" [class.active]="feedFilter === 'updates'" (click)="feedFilter = 'updates'">
+            <i class="fas fa-clipboard-list"></i> Updates
+          </button>
+          <button type="button" class="tab" [class.active]="feedFilter === 'messages'" (click)="feedFilter = 'messages'">
+            <i class="fas fa-comments"></i> Messages
+          </button>
+          <button type="button" class="tab" [class.active]="feedFilter === 'tasks'" (click)="feedFilter = 'tasks'">
+            <i class="fas fa-tasks"></i> Tasks
+          </button>
+        </div>
+
+        <!-- Tasks Kanban (project room only) -->
+        <div class="tasks-section" *ngIf="feedFilter === 'tasks'">
+          <div class="tasks-header">
+            <h3><i class="fas fa-tasks"></i> Tasks</h3>
+            <button type="button" class="btn-primary btn-sm" (click)="openTaskModal()" *ngIf="canManageTasks()">
+              <i class="fas fa-plus"></i> New Task
+            </button>
+          </div>
+          <div class="tasks-loading" *ngIf="loadingTasks">
+            <i class="fas fa-spinner fa-spin"></i> Loading tasks...
+          </div>
+          <div class="tasks-kanban" *ngIf="!loadingTasks">
+            <div class="task-column">
+              <div class="task-column-header"><h5>To Do ({{ tasksByStatus['TO_DO'].length }})</h5></div>
+              <div class="task-list" (dragover)="$event.preventDefault()" (drop)="updateTaskStatus($event, TaskStatus.TO_DO)">
+                <div class="task-item" *ngFor="let task of tasksByStatus['TO_DO']" draggable="true"
+                     (dragstart)="onTaskDragStart($event, task)" (click)="openTaskModal(task)">
+                  <div class="task-header">
+                    <h6>{{ task.title }}</h6>
+                    <div class="task-actions" *ngIf="canManageTasks()">
+                      <button type="button" class="btn-icon-sm" (click)="openTaskModal(task); $event.stopPropagation()"><i class="fas fa-edit"></i></button>
+                      <button type="button" class="btn-icon-sm btn-danger" (click)="deleteTask(task.id!, task.title); $event.stopPropagation()"><i class="fas fa-trash"></i></button>
+                    </div>
+                  </div>
+                  <p class="task-description" *ngIf="task.description">{{ task.description }}</p>
+                  <div class="task-meta">
+                    <span class="task-priority" [ngClass]="getPriorityColorClass(task.priority)"><i class="fas fa-flag"></i> {{ getPriorityDisplay(task.priority) }}</span>
+                    <span class="task-assigned" *ngIf="task.assignedToName"><i class="fas fa-user"></i> {{ task.assignedToName }}</span>
+                    <span class="task-due" *ngIf="task.dueDate"><i class="fas fa-calendar"></i> {{ formatDate(task.dueDate) }}</span>
+                  </div>
+                </div>
+                <div class="task-empty" *ngIf="tasksByStatus['TO_DO'].length === 0">No tasks</div>
+              </div>
+            </div>
+            <div class="task-column">
+              <div class="task-column-header"><h5>In Progress ({{ tasksByStatus['IN_PROGRESS'].length }})</h5></div>
+              <div class="task-list" (dragover)="$event.preventDefault()" (drop)="updateTaskStatus($event, TaskStatus.IN_PROGRESS)">
+                <div class="task-item" *ngFor="let task of tasksByStatus['IN_PROGRESS']" draggable="true"
+                     (dragstart)="onTaskDragStart($event, task)" (click)="openTaskModal(task)">
+                  <div class="task-header">
+                    <h6>{{ task.title }}</h6>
+                    <div class="task-actions" *ngIf="canManageTasks()">
+                      <button type="button" class="btn-icon-sm" (click)="openTaskModal(task); $event.stopPropagation()"><i class="fas fa-edit"></i></button>
+                      <button type="button" class="btn-icon-sm btn-danger" (click)="deleteTask(task.id!, task.title); $event.stopPropagation()"><i class="fas fa-trash"></i></button>
+                    </div>
+                  </div>
+                  <p class="task-description" *ngIf="task.description">{{ task.description }}</p>
+                  <div class="task-meta">
+                    <span class="task-priority" [ngClass]="getPriorityColorClass(task.priority)"><i class="fas fa-flag"></i> {{ getPriorityDisplay(task.priority) }}</span>
+                    <span class="task-assigned" *ngIf="task.assignedToName"><i class="fas fa-user"></i> {{ task.assignedToName }}</span>
+                    <span class="task-due" *ngIf="task.dueDate"><i class="fas fa-calendar"></i> {{ formatDate(task.dueDate) }}</span>
+                  </div>
+                </div>
+                <div class="task-empty" *ngIf="tasksByStatus['IN_PROGRESS'].length === 0">No tasks</div>
+              </div>
+            </div>
+            <div class="task-column">
+              <div class="task-column-header"><h5>Done ({{ tasksByStatus['DONE'].length }})</h5></div>
+              <div class="task-list" (dragover)="$event.preventDefault()" (drop)="updateTaskStatus($event, TaskStatus.DONE)">
+                <div class="task-item task-done" *ngFor="let task of tasksByStatus['DONE']" draggable="true"
+                     (dragstart)="onTaskDragStart($event, task)" (click)="openTaskModal(task)">
+                  <div class="task-header">
+                    <h6>{{ task.title }}</h6>
+                    <div class="task-actions" *ngIf="canManageTasks()">
+                      <button type="button" class="btn-icon-sm" (click)="openTaskModal(task); $event.stopPropagation()"><i class="fas fa-edit"></i></button>
+                      <button type="button" class="btn-icon-sm btn-danger" (click)="deleteTask(task.id!, task.title); $event.stopPropagation()"><i class="fas fa-trash"></i></button>
+                    </div>
+                  </div>
+                  <p class="task-description" *ngIf="task.description">{{ task.description }}</p>
+                  <div class="task-meta">
+                    <span class="task-priority" [ngClass]="getPriorityColorClass(task.priority)"><i class="fas fa-flag"></i> {{ getPriorityDisplay(task.priority) }}</span>
+                    <span class="task-assigned" *ngIf="task.assignedToName"><i class="fas fa-user"></i> {{ task.assignedToName }}</span>
+                    <span class="task-completed" *ngIf="task.completedAt"><i class="fas fa-check-circle"></i> {{ formatDate(task.completedAt) }}</span>
+                  </div>
+                </div>
+                <div class="task-empty" *ngIf="tasksByStatus['DONE'].length === 0">No tasks</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="messages-section" *ngIf="feedFilter !== 'tasks'">
+          <div class="messages-container" id="project-dashboard-messages">
+            <div *ngIf="loadingMessages" class="loading-messages">
+              <i class="fas fa-spinner fa-spin"></i> Loading...
+            </div>
+            <div *ngIf="!loadingMessages && filteredMessages.length === 0" class="no-messages">
+              <p>{{ feedFilter === 'updates' ? 'No updates yet.' : feedFilter === 'messages' ? 'No messages yet.' : 'No activity yet. Send a message or post an update.' }}</p>
+            </div>
+            <div *ngIf="!loadingMessages && filteredMessages.length > 0" class="messages-list">
+              <ng-container *ngFor="let group of messageGroups()">
+                <div class="date-separator">{{ group.dateLabel }}</div>
+                <div *ngFor="let message of group.messages" 
+                     class="message-item" 
+                     [class.my-message]="!isAdminJoinedMessage(message) && !isUpdateMessage(message) && isMyMessage(message)"
+                     [class.their-message]="!isAdminJoinedMessage(message) && !isUpdateMessage(message) && !isMyMessage(message)"
+                     [class.is-update]="isUpdateMessage(message)"
+                     [class.is-system]="isAdminJoinedMessage(message)">
+                  <div class="message-content" *ngIf="!isUpdateMessage(message) && !isAdminJoinedMessage(message)">
+                    <div class="message-header">
+                      <strong>{{ message.senderUsername }}</strong>
+                      <span class="message-time">{{ message.sentAt | date:'short' }}</span>
+                    </div>
+                    <p class="message-text">{{ message.content }}</p>
+                  </div>
+                  <div class="update-content" *ngIf="isUpdateMessage(message)">
+                    <div class="update-header">
+                      <i class="fas fa-clipboard-list"></i>
+                      <strong>{{ getUpdateTitle(message) }}</strong>
+                      <span class="message-time">{{ message.sentAt | date:'short' }}</span>
+                    </div>
+                    <p class="update-author">{{ message.senderUsername }}</p>
+                    <p class="message-text">{{ message.content }}</p>
+                  </div>
+                  <div class="system-content" *ngIf="isAdminJoinedMessage(message)">
+                    <i class="fas fa-user-shield"></i>
+                    <span class="message-text">{{ message.content }}</span>
+                    <span class="message-time">{{ message.sentAt | date:'short' }}</span>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+
+          <div class="composer-area">
+            <div class="update-form-block" *ngIf="showUpdateForm && canPostUpdate()">
+              <h4 class="composer-label"><i class="fas fa-clipboard-list"></i> Post an update</h4>
+              <input type="text" class="update-title-input" [(ngModel)]="updateTitle" placeholder="Update title (e.g. Phase 1 completed)" />
+              <textarea class="update-content-input" [(ngModel)]="updateContent" placeholder="Describe progress or deliverables..." rows="3"></textarea>
+              <div class="composer-actions">
+                <button type="button" class="btn-cancel" (click)="showUpdateForm = false">Cancel</button>
+                <button type="button" class="btn-send btn-update" (click)="postUpdate()" 
+                        [disabled]="sendingUpdate || (!updateContent?.trim() && !updateTitle?.trim())">
+                  <i class="fas fa-spinner fa-spin" *ngIf="sendingUpdate"></i>
+                  <i class="fas fa-check" *ngIf="!sendingUpdate"></i>
+                  Post update
+                </button>
+              </div>
+            </div>
+            <div class="message-input-area" *ngIf="!showUpdateForm || !canPostUpdate()">
+              <textarea 
+                [(ngModel)]="newMessageContent"
+                placeholder="Write a message..."
+                rows="2"
+                (keydown.enter)="$event.preventDefault(); sendMessage()"
+                class="message-input"></textarea>
+              <div class="composer-actions">
+                <button type="button" class="btn-post-update" *ngIf="canPostUpdate() && !showUpdateForm" (click)="showUpdateForm = true">
+                  <i class="fas fa-clipboard-list"></i> Post update
+                </button>
+                <button type="button" class="btn-send" (click)="sendMessage()" 
+                        [disabled]="sendingMessage || !newMessageContent?.trim()">
+                  <i class="fas fa-spinner fa-spin" *ngIf="sendingMessage"></i>
+                  <i class="fas fa-paper-plane" *ngIf="!sendingMessage"></i>
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && !canAccess && project" class="access-denied">
+    <i class="fas fa-lock"></i>
+    <h2>Access denied</h2>
+    <p>This project room is only for the client and the assigned freelancer.</p>
+    <button type="button" class="btn-back" (click)="goBack()">Back to Projects</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <i class="fas fa-spinner fa-spin"></i> Loading project...
+  </div>
+
+  <!-- Task Modal (project room) -->
+  <div class="modal-overlay" *ngIf="showTaskModal" (click)="closeTaskModal()">
+    <div class="modal-content task-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2><i class="fas fa-tasks"></i> {{ editingTask ? 'Edit Task' : 'Create New Task' }}</h2>
+        <button type="button" class="modal-close" (click)="closeTaskModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <form #taskForm="ngForm">
+          <div class="form-group">
+            <label>Task Title *</label>
+            <input type="text" placeholder="Enter task title" [(ngModel)]="newTask.title" name="taskTitle" required minlength="3" maxlength="200">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea rows="3" placeholder="Task description" [(ngModel)]="newTask.description" name="taskDescription" maxlength="2000"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Assign To</label>
+            <select class="setting-select" [(ngModel)]="newTask.assignedTo" name="assignedTo">
+              <option [ngValue]="undefined">Unassigned</option>
+              <option *ngFor="let u of taskAssignableUsers" [ngValue]="u.id">{{ u.username }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select class="setting-select" [(ngModel)]="newTask.priority" name="priority">
+              <option [value]="0">Low</option>
+              <option [value]="1">Medium</option>
+              <option [value]="2">High</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Due Date</label>
+            <input type="datetime-local" [(ngModel)]="newTask.dueDate" name="dueDate">
+          </div>
+          <div class="form-group" *ngIf="editingTask">
+            <label>Status</label>
+            <select class="setting-select" [(ngModel)]="editingTask.status" name="status">
+              <option value="TO_DO">To Do</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="DONE">Done</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeTaskModal()">Cancel</button>
+        <button type="button" class="btn-primary" (click)="saveTask()" [disabled]="!newTask.title || newTask.title.trim().length < 3">
+          {{ editingTask ? 'Update Task' : 'Create Task' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,49 @@
+<!-- Skip link for accessibility (keyboard & screen readers) -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Admin Layout (Sidebar + Header) -->
+<div *ngIf="isAdminRoute" class="admin-layout">
+  <app-sidebar></app-sidebar>
+  <div class="admin-content">
+    <app-header></app-header>
+    <main id="main-content" class="main-content" tabindex="-1">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<!-- Auth Pages (Login/Signup) - No Navbar, No Footer -->
+<div *ngIf="isAuthPage">
+  <router-outlet></router-outlet>
+</div>
+
+<!-- Public/User Layout (Navbar + Footer) -->
+<div *ngIf="!isAdminRoute && !isAuthPage" class="user-layout">
+  <app-navbar></app-navbar>
+  <main id="main-content" class="main-with-navbar" tabindex="-1"><router-outlet></router-outlet></main>
+  <app-footer *ngIf="showFooter"></app-footer>
+</div>
+
+<!-- Toast notifications (global) -->
+<app-toast></app-toast>
+
+<!-- Freelancify AI chatbox (when logged in, sauf compte collaborateur seul) -->
+<app-chatbox *ngIf="!isCollaborateurOnly()"></app-chatbox>
+
+<!-- Publicité priorité haute (popup) — pas sur login / admin -->
+<div class="collab-overlay" *ngIf="showCollaborationAds && showHighAdModal && highPopupAd" (click)="dismissHighAd()">
+  <div class="collab-modal" (click)="$event.stopPropagation()">
+    <button type="button" class="collab-close" (click)="dismissHighAd()" aria-label="Fermer">×</button>
+    <img *ngIf="highPopupAd.type === 'IMAGE'" [src]="collabMediaFull(highPopupAd.mediaUrl)" alt="" />
+    <video *ngIf="highPopupAd.type === 'VIDEO'" [src]="collabMediaFull(highPopupAd.mediaUrl)" controls autoplay muted playsinline></video>
+  </div>
+</div>
+
+<!-- Publicité priorité moyenne (panneau droit) -->
+<div class="collab-side-rail" *ngIf="showCollaborationAds && mediumAdsVisible().length">
+  <div class="collab-side-item" *ngFor="let ad of mediumAdsVisible()">
+    <button type="button" class="collab-side-x" (click)="dismissMediumAd(ad.id)" aria-label="Fermer">×</button>
+    <img *ngIf="ad.type === 'IMAGE'" [src]="collabMediaFull(ad.mediaUrl)" alt="" />
+    <video *ngIf="ad.type === 'VIDEO'" [src]="collabMediaFull(ad.mediaUrl)" controls muted playsinline></video>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo-section">
+      <img src="assets/logo.png" alt="Freelancify" class="admin-logo">
+      <h2>Freelancify</h2>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a (click)="navigateTo('/admin/dashboard')" class="nav-item" [class.active]="router.url === '/admin/dashboard' || router.url.startsWith('/admin/dashboard')">
+      <i class="fas fa-chart-line"></i>
+      <span>Dashboard</span>
+    </a>
+    <a (click)="navigateTo('/users')" class="nav-item" [class.active]="router.url === '/users' || router.url.startsWith('/admin/users')">
+      <i class="fas fa-users"></i>
+      <span>Users</span>
+    </a>
+    <a (click)="navigateTo('/admin/test')" class="nav-item" [class.active]="router.url === '/admin/test' || router.url.startsWith('/admin/test') || router.url === '/addquestion' || router.url.startsWith('/addquestion')">
+      <i class="fas fa-vial"></i>
+      <span>Test</span>
+    </a>
+    <a (click)="navigateTo('/admin/affectations')" class="nav-item" [class.active]="router.url === '/admin/affectations' || router.url.startsWith('/admin/affectations')">
+      <i class="fas fa-tasks"></i>
+      <span>Affectations</span>
+    </a>
+    <a (click)="navigateTo('/admin/projects')" class="nav-item" [class.active]="router.url === '/admin/projects' || router.url.startsWith('/admin/projects')">
+      <i class="fas fa-briefcase"></i>
+      <span>Projects</span>
+    </a>
+    <a (click)="navigateTo('/admin/complaints')" class="nav-item" [class.active]="router.url === '/admin/complaints' || router.url.startsWith('/admin/complaints')">
+      <i class="fas fa-exclamation-circle"></i>
+      <span>Complaints</span>
+    </a>
+    <a (click)="navigateTo('/admin/collaborations')" class="nav-item" [class.active]="router.url === '/admin/collaborations' || router.url.startsWith('/admin/collaborations')">
+      <i class="fas fa-ad"></i>
+      <span>Collaborations</span>
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <button (click)="logout()" class="btn-logout">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>Logout</span>
+    </button>
+  </div>
+</aside>
