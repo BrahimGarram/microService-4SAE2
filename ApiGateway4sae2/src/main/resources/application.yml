@@ -1,5 +1,8 @@
 # CORS : un seul jeu d'en-têtes (filtre Java supprime ceux des backends puis ajoute ceux du gateway)
 spring:
+  # Uploads collaboration (multipart) : évite DataBufferLimitException côté gateway
+  codec:
+    max-in-memory-size: 64MB
   cloud:
     gateway:
       globalcors:

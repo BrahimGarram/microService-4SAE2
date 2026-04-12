@@ -20,13 +20,15 @@ public class ApiGateway4sae2Application {
     /**
      * URIs par défaut {@code lb://...} (Eureka). En Docker Compose, surcharger via les variables
      * {@code GATEWAY_USER_SERVICE_URI}, {@code GATEWAY_SERVICE_TEST_URI} pour éviter les 503
-     * si le registre Eureka est vide ou lent.
+     * si le registre Eureka est vide ou lent. Collaboration (Symfony) : toujours une URI HTTP
+     * directe ({@code GATEWAY_COLLABORATION_URI}) — pas d'enregistrement Eureka.
      */
     @Bean
     public RouteLocator gatewayRoutes(
             RouteLocatorBuilder builder,
             @Value("${gateway.user-service.uri:lb://USER-SERVICE}") String userServiceUri,
-            @Value("${gateway.service-test.uri:lb://SERVICE-TEST}") String serviceTestUri) {
+            @Value("${gateway.service-test.uri:lb://SERVICE-TEST}") String serviceTestUri,
+            @Value("${gateway.collaboration.uri:http://localhost:8888}") String collaborationUri) {
 
         return builder.routes()
                 /* Service Test: context-path = /service-test (voir application.properties du service-test) */
@@ -55,6 +57,10 @@ public class ApiGateway4sae2Application {
                 .route("complaints-service", r -> r.path("/complaints/**")
                         .filters(f -> f.rewritePath("/complaints/(?<path>.*)", "/freelancity/${path}"))
                         .uri("lb://FREELANCE-PLATFORM-SPRING-APP"))
+                /* Symfony collaboration (pubs): /collaboration/api/... -> service */
+                .route("collaboration-service", r -> r.path("/collaboration/**")
+                        .filters(f -> f.rewritePath("/collaboration/(?<path>.*)", "/${path}"))
+                        .uri(collaborationUri))
                 .build();
     }
 }

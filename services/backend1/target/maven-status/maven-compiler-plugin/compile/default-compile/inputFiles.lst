@@ -46,6 +46,7 @@ C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\j
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\dto\PostCommentDTO.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\dto\SuggestFreelancersRequest.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\exception\UserAlreadyExistsException.java
+C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\config\UsersRoleColumnCompatibility.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\dto\ForgotPasswordRequest.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\repository\FollowRepository.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\model\ResetPasswordToken.java

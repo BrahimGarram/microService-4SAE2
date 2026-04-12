@@ -1,6 +1,7 @@
 # Docker Compose v2+ — pas de container_name : évite les conflits avec d'anciens conteneurs.
-# Ports hôte : Eureka 18761, MySQL 3307, Keycloak 8180, user-service 18081, service-test 18089,
-#             api-gateway 18090, frontend 4200
+# Ports hôte : Eureka UI http://localhost:18761 (interne conteneur 8761), MySQL 3307, Postgres collab 5434,
+#             Keycloak 8180, user-service 18081, service-test 18089, collaboration 8888, api-gateway 18090, frontend 4200
+# Collaboration = Symfony (PHP) : pas d’enregistrement Eureka (normal). Routage gateway = GATEWAY_COLLABORATION_URI.
 
 services:
 
@@ -27,6 +28,23 @@ services:
       timeout: 5s
       retries: 20
       start_period: 25s
+
+  postgres-collab:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: collab
+      POSTGRES_PASSWORD: collab
+      POSTGRES_DB: collaboration_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-collab-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U collab -d collaboration_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
   keycloak:
     image: quay.io/keycloak/keycloak:23.0.7
@@ -89,6 +107,26 @@ services:
       EUREKA_CLIENT_FETCH_REGISTRY: "true"
       USER_SERVICE_URL: http://user-service:8081
 
+  collaboration-service:
+    build: ./services/collaborationService
+    pull_policy: build
+    depends_on:
+      postgres-collab:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    ports:
+      - "8888:80"
+    environment:
+      APP_ENV: prod
+      APP_SECRET: collaboration_app_secret_replace_in_prod_minimum_32c
+      # Pas de charset=utf8 (PostgreSQL / DBAL : peut poser problème selon versions)
+      DATABASE_URL: postgresql://collab:collab@postgres-collab:5432/collaboration_db?serverVersion=16
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_REALM: projetpidev
+      # Évite doctrine:// pour async (table messenger_messages non requise pour cette API)
+      MESSENGER_TRANSPORT_DSN: sync://
+
   api-gateway:
     build: ./ApiGateway4sae2
     image: brahim2002/api-gateway:latest
@@ -100,6 +138,8 @@ services:
         condition: service_healthy
       service-test:
         condition: service_started
+      collaboration-service:
+        condition: service_started
     ports:
       - "18090:8090"
     environment:
@@ -109,6 +149,7 @@ services:
       # Routage HTTP direct (réseau Compose) : évite les 503 lb:// si Eureka est lent ou vide.
       GATEWAY_USER_SERVICE_URI: http://user-service:8081
       GATEWAY_SERVICE_TEST_URI: http://service-test:8089
+      GATEWAY_COLLABORATION_URI: http://collaboration-service:80
 
   frontend:
     build: ./frontend
@@ -124,3 +165,4 @@ services:
 
 volumes:
   mysql-data:
+  postgres-collab-data:

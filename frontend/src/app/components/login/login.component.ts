@@ -59,10 +59,15 @@ export class LoginComponent implements OnInit {
       
       // Check for ADMIN role (case-insensitive)
       const isAdmin = userRoles.some((role: string) => role.toUpperCase() === 'ADMIN');
-      
+      const isCollabOnly =
+        !isAdmin &&
+        userRoles.some((role: string) => role.toUpperCase() === 'COLLABORATEUR');
+
       if (isAdmin) {
         console.log('LoginComponent ngOnInit: User is admin, redirecting to /admin/dashboard');
         window.location.href = '/admin/dashboard';
+      } else if (isCollabOnly) {
+        window.location.href = '/collaboration';
       } else {
         console.log('LoginComponent ngOnInit: User is not admin, redirecting to home');
         window.location.href = '/';
@@ -159,7 +164,10 @@ export class LoginComponent implements OnInit {
         const roles = tokenPayload.realm_access?.roles || [];
         // Check for ADMIN role (case-insensitive to be safe)
         const isAdmin = roles.some((role: string) => role.toUpperCase() === 'ADMIN');
-        
+        const isCollabOnly =
+          !isAdmin &&
+          roles.some((role: string) => role.toUpperCase() === 'COLLABORATEUR');
+
         console.log('=== LOGIN DEBUG ===');
         console.log('Full token payload:', tokenPayload);
         console.log('Realm access:', tokenPayload.realm_access);
@@ -180,6 +188,8 @@ export class LoginComponent implements OnInit {
             console.log('LoginComponent: User is ADMIN, redirecting to /admin/dashboard');
             // Force immediate redirect to admin dashboard
             window.location.replace('/admin/dashboard');
+          } else if (isCollabOnly) {
+            window.location.replace('/collaboration');
           } else {
             console.log('LoginComponent: User is not admin, redirecting to home');
             window.location.replace('/');

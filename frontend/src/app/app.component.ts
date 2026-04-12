@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, NavigationEnd } from '@angular/router';
+import { Router, NavigationEnd, NavigationStart } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { KeycloakService } from 'keycloak-angular';
 import { AccessibilityService } from './services/accessibility.service';
 import { environment } from '../environments/environment';
+import { CollaborationApiService, CollaborationPublicDto } from './services/collaboration-api.service';
+import { isCollaborateurOnlyAccount } from './utils/role-utils';
 
 @Component({
   selector: 'app-root',
@@ -17,12 +19,21 @@ export class AppComponent implements OnInit {
   isAdmin = false;
   isAdminRoute = false;
   showFooter = true;
-  isAuthPage = false; // For login/signup pages
-  
+  isAuthPage = false; // Pages sans layout (login, inscription, mot de passe)
+  /** Publicités collaboration : uniquement sur le site « interne », pas login ni admin */
+  showCollaborationAds = false;
+
+  /** Publicités (priorité haute / moyenne) pour invités et utilisateurs. */
+  highPopupAd: CollaborationPublicDto | null = null;
+  showHighAdModal = false;
+  mediumSideAds: CollaborationPublicDto[] = [];
+  dismissedMediumIds = new Set<number>();
+
   constructor(
     private keycloakService: KeycloakService,
     private router: Router,
-    private accessibility: AccessibilityService
+    private accessibility: AccessibilityService,
+    private collaborationApi: CollaborationApiService
   ) {}
   
   async ngOnInit() {
@@ -53,6 +64,73 @@ export class AppComponent implements OnInit {
       this.updateLayout(event.url);
     });
     this.updateLayout(this.router.url);
+
+    this.router.events.pipe(filter((e) => e instanceof NavigationStart)).subscribe((e) => {
+      if (!(e instanceof NavigationStart) || !isCollaborateurOnlyAccount()) {
+        return;
+      }
+      const url = e.url.split('?')[0];
+      if (this.isCollaborateurAllowedPath(url)) {
+        return;
+      }
+      this.router.navigate(['/collaboration'], { queryParams: { restricted: '1' }, replaceUrl: true });
+    });
+
+    this.loadCollaborationOverlays();
+  }
+
+  private isCollaborateurAllowedPath(url: string): boolean {
+    if (url === '/' || url === '/home' || url === '/login' || url === '/signup' || url === '/forgot-password') {
+      return true;
+    }
+    if (url.startsWith('/reset-password')) {
+      return true;
+    }
+    return url === '/collaboration' || url.startsWith('/collaboration');
+  }
+
+  private loadCollaborationOverlays(): void {
+    this.collaborationApi.getPublic().subscribe({
+      next: (g) => {
+        const highs = g.high || [];
+        if (highs.length > 0) {
+          const first = highs[0];
+          const key = 'collab_high_dismissed_' + first.id;
+          if (!sessionStorage.getItem(key)) {
+            this.highPopupAd = first;
+            this.showHighAdModal = true;
+          }
+        }
+        this.mediumSideAds = g.medium || [];
+      },
+      error: () => {
+        /* service optionnel si gateway / Symfony non démarrés */
+      }
+    });
+  }
+
+  dismissHighAd(): void {
+    if (this.highPopupAd) {
+      sessionStorage.setItem('collab_high_dismissed_' + this.highPopupAd.id, '1');
+    }
+    this.showHighAdModal = false;
+    this.highPopupAd = null;
+  }
+
+  dismissMediumAd(id: number): void {
+    this.dismissedMediumIds.add(id);
+  }
+
+  mediumAdsVisible(): CollaborationPublicDto[] {
+    return this.mediumSideAds.filter((a) => !this.dismissedMediumIds.has(a.id));
+  }
+
+  collabMediaFull(relativePath: string): string {
+    return this.collaborationApi.absoluteMediaUrl(relativePath);
+  }
+
+  isCollaborateurOnly(): boolean {
+    return isCollaborateurOnlyAccount();
   }
   
   /**
@@ -81,11 +159,16 @@ export class AppComponent implements OnInit {
             const tokenPayload = JSON.parse(atob(token.split('.')[1]));
             const roles = tokenPayload.realm_access?.roles || [];
             const isAdmin = roles.some((role: string) => role.toUpperCase() === 'ADMIN');
-            
+            const isCollabOnly =
+              !isAdmin &&
+              roles.some((role: string) => role.toUpperCase() === 'COLLABORATEUR');
+
             // Clean URL and redirect
             window.history.replaceState({}, document.title, '/');
             if (isAdmin) {
               window.location.href = '/admin/dashboard';
+            } else if (isCollabOnly) {
+              window.location.href = '/collaboration';
             } else {
               window.location.href = '/';
             }
@@ -124,13 +207,18 @@ export class AppComponent implements OnInit {
               // Redirect based on role
               const roles = tokenPayload.realm_access?.roles || [];
               const isAdmin = roles.some((role: string) => role.toUpperCase() === 'ADMIN');
-              
+              const isCollabOnly =
+                !isAdmin &&
+                roles.some((role: string) => role.toUpperCase() === 'COLLABORATEUR');
+
               // Clean URL (remove code parameter)
               window.history.replaceState({}, document.title, window.location.pathname);
-              
+
               // Redirect
               if (isAdmin) {
                 window.location.href = '/admin/dashboard';
+              } else if (isCollabOnly) {
+                window.location.href = '/collaboration';
               } else {
                 window.location.href = '/';
               }
@@ -204,8 +292,12 @@ export class AppComponent implements OnInit {
   }
 
   updateLayout(url: string) {
-    // Auth pages (login/signup) - no navbar, no footer
-    this.isAuthPage = url === '/login' || url === '/signup';
+    // Pages auth — pas de navbar / pas de publicités collaboration
+    this.isAuthPage =
+      url === '/login' ||
+      url === '/signup' ||
+      url === '/forgot-password' ||
+      url.startsWith('/reset-password');
     
     // Admin routes use sidebar/header layout
     // Only /admin/projects is admin route, not /projects. Add question is part of admin test.
@@ -213,10 +305,13 @@ export class AppComponent implements OnInit {
                         url.startsWith('/users') || 
                         url.startsWith('/addquestion') ||
                         (url.includes('/dashboard') && url.startsWith('/admin')) || 
-                        (url.includes('/settings') && url.startsWith('/admin'));
+                        (url.includes('/settings') && url.startsWith('/admin')) ||
+                        url.startsWith('/admin/collaborations');
     
     // Don't show footer on admin routes or auth pages
     this.showFooter = !this.isAdminRoute && !this.isAuthPage;
+
+    this.showCollaborationAds = !this.isAuthPage && !this.isAdminRoute;
   }
   
   /**

@@ -1,6 +1,8 @@
 /**
- * Tous les appels backend passent par l'API Gateway (port 8090).
- * Microservices exposés : user, project, complaints, service-test.
+ * Tous les appels backend passent par l'API Gateway.
+ * - ng serve + gateway lancée en local (Maven) : http://localhost:8090
+ * - Tout en Docker : voir environment.docker.ts → gateway http://localhost:18090
+ * Eureka (ce repo Docker) : http://localhost:18761 — le service collaboration (Symfony) n’y apparaît pas (pas Java / pas client Eureka).
  */
 export const environment = {
   production: false,
@@ -15,6 +17,7 @@ export const environment = {
   imgbbApiKey: '9c862141b3c163e8a8e11109ce021ff3',
   imgbbApiUrl: 'https://api.imgbb.com/1/upload',
 
+  /** Keycloak en local (ton cas : 8080). Build Docker : environment.docker.ts utilise 8180. */
   keycloakUrl: 'http://localhost:8080',
   keycloakRealm: 'projetpidev',
   keycloakClientId: 'freelance-client'

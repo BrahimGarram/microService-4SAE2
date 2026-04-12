@@ -40,7 +40,9 @@ public class CorsFixGlobalFilter implements WebFilter {
         ServerHttpResponseDecorator response = new ServerHttpResponseDecorator(originalResponse) {
             @Override
             public HttpHeaders getHeaders() {
-                HttpHeaders headers = super.getHeaders();
+                // Copie mutable : super.getHeaders() peut être en lecture seule (ReadOnlyHttpHeaders) → remove() = 500 Whitelabel
+                HttpHeaders headers = new HttpHeaders();
+                headers.addAll(super.getHeaders());
                 removeCorsHeaders(headers);
                 headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigin);
                 headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");

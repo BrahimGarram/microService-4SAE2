@@ -47,7 +47,7 @@ public class User {
      * This should match the roles defined in Keycloak realm
      */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 32)
     private UserRole role;
     
     /**

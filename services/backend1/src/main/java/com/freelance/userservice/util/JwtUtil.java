@@ -69,7 +69,7 @@ public class JwtUtil {
     
     /**
      * Extract the highest role from JWT
-     * Priority: ADMIN > ENTERPRISE > FREELANCER > USER
+     * Priority: ADMIN > COLLABORATEUR > ENTERPRISE > FREELANCER > USER
      * @param jwt The JWT token
      * @return UserRole enum
      */
@@ -78,6 +78,8 @@ public class JwtUtil {
         
         if (roles.contains("ADMIN")) {
             return UserRole.ADMIN;
+        } else if (roles.contains("COLLABORATEUR")) {
+            return UserRole.COLLABORATEUR;
         } else if (roles.contains("ENTERPRISE")) {
             return UserRole.ENTERPRISE;
         } else if (roles.contains("FREELANCER")) {

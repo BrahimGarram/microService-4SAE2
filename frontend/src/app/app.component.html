@@ -27,5 +27,23 @@
 <!-- Toast notifications (global) -->
 <app-toast></app-toast>
 
-<!-- Freelancify AI chatbox (when logged in) -->
-<app-chatbox></app-chatbox>
+<!-- Freelancify AI chatbox (when logged in, sauf compte collaborateur seul) -->
+<app-chatbox *ngIf="!isCollaborateurOnly()"></app-chatbox>
+
+<!-- Publicité priorité haute (popup) — pas sur login / admin -->
+<div class="collab-overlay" *ngIf="showCollaborationAds && showHighAdModal && highPopupAd" (click)="dismissHighAd()">
+  <div class="collab-modal" (click)="$event.stopPropagation()">
+    <button type="button" class="collab-close" (click)="dismissHighAd()" aria-label="Fermer">×</button>
+    <img *ngIf="highPopupAd.type === 'IMAGE'" [src]="collabMediaFull(highPopupAd.mediaUrl)" alt="" />
+    <video *ngIf="highPopupAd.type === 'VIDEO'" [src]="collabMediaFull(highPopupAd.mediaUrl)" controls autoplay muted playsinline></video>
+  </div>
+</div>
+
+<!-- Publicité priorité moyenne (panneau droit) -->
+<div class="collab-side-rail" *ngIf="showCollaborationAds && mediumAdsVisible().length">
+  <div class="collab-side-item" *ngFor="let ad of mediumAdsVisible()">
+    <button type="button" class="collab-side-x" (click)="dismissMediumAd(ad.id)" aria-label="Fermer">×</button>
+    <img *ngIf="ad.type === 'IMAGE'" [src]="collabMediaFull(ad.mediaUrl)" alt="" />
+    <video *ngIf="ad.type === 'VIDEO'" [src]="collabMediaFull(ad.mediaUrl)" controls muted playsinline></video>
+  </div>
+</div>

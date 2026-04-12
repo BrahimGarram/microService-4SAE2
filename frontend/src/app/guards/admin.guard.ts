@@ -99,9 +99,9 @@ export class AdminGuard implements CanActivate {
       console.log('AdminGuard: Is admin:', isAdmin);
       
       if (!isAdmin) {
-        console.log('AdminGuard: User is not admin, redirecting to home');
-        // Redirect to home if not admin
-        this.router.navigate(['/']);
+        const isCollab = Array.isArray(userRoles) && userRoles.some((role: string) => String(role).toUpperCase() === 'COLLABORATEUR');
+        console.log('AdminGuard: User is not admin, redirecting');
+        this.router.navigate([isCollab ? '/collaboration' : '/']);
         return false;
       }
       

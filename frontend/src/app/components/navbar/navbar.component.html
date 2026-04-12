@@ -13,7 +13,8 @@
     </div>
     <ul class="nav-menu" [class.active]="isMobileMenuOpen">
       <li><a (click)="navigateTo('/')" style="cursor: pointer;">Home</a></li>
-      <li class="dropdown" (mouseenter)="showServicesDropdown = true" (mouseleave)="showServicesDropdown = false">
+      <li *ngIf="isAuthenticated"><a (click)="navigateTo('/collaboration')" style="cursor: pointer;"><i class="fas fa-ad"></i> Collaboration</a></li>
+      <li *ngIf="isAuthenticated && !isCollaborateurOnlyUser" class="dropdown" (mouseenter)="showServicesDropdown = true" (mouseleave)="showServicesDropdown = false">
         <a (click)="toggleServicesDropdown(); $event.preventDefault()" style="cursor: pointer;">Services <i class="fas fa-chevron-down"></i></a>
         <ul class="dropdown-menu" [class.show]="showServicesDropdown">
           <li><a (click)="navigateTo('/test'); closeServicesDropdown()" style="cursor: pointer;"><i class="fas fa-flask"></i> Test</a></li>
@@ -25,15 +26,15 @@
       <li class="dropdown" (mouseenter)="showDiscoverDropdown = true" (mouseleave)="showDiscoverDropdown = false">
         <a (click)="toggleDiscoverDropdown(); $event.preventDefault()" style="cursor: pointer;">Discover <i class="fas fa-chevron-down"></i></a>
         <ul class="dropdown-menu" [class.show]="showDiscoverDropdown">
-          <li *ngIf="isAuthenticated"><a (click)="navigateTo('/feed'); closeDiscoverDropdown()" style="cursor: pointer;"><i class="fas fa-video"></i> Feed</a></li>
-          <li *ngIf="isAuthenticated"><a (click)="navigateTo('/browse-users'); closeDiscoverDropdown()" style="cursor: pointer;"><i class="fas fa-users"></i> Browse Users</a></li>
+          <li *ngIf="isAuthenticated && !isCollaborateurOnlyUser"><a (click)="navigateTo('/feed'); closeDiscoverDropdown()" style="cursor: pointer;"><i class="fas fa-video"></i> Feed</a></li>
+          <li *ngIf="isAuthenticated && !isCollaborateurOnlyUser"><a (click)="navigateTo('/browse-users'); closeDiscoverDropdown()" style="cursor: pointer;"><i class="fas fa-users"></i> Browse Users</a></li>
           <li><a (click)="scrollToSection('portfolio'); closeDiscoverDropdown(); $event.preventDefault()" style="cursor: pointer;"><i class="fas fa-book"></i> Blog</a></li>
           <li><a (click)="scrollToSection('about'); closeDiscoverDropdown(); $event.preventDefault()" style="cursor: pointer;"><i class="fas fa-info-circle"></i> About</a></li>
           <li><a (click)="scrollToSection('contact'); closeDiscoverDropdown(); $event.preventDefault()" style="cursor: pointer;"><i class="fas fa-envelope"></i> Contact</a></li>
         </ul>
       </li>
-      <li *ngIf="isAuthenticated"><a (click)="navigateTo('/messages')" style="cursor: pointer;"><i class="fas fa-envelope"></i> Messages</a></li>
-      <li *ngIf="isAuthenticated" class="dropdown" (mouseenter)="showProjectsDropdown = true" (mouseleave)="showProjectsDropdown = false">
+      <li *ngIf="isAuthenticated && !isCollaborateurOnlyUser"><a (click)="navigateTo('/messages')" style="cursor: pointer;"><i class="fas fa-envelope"></i> Messages</a></li>
+      <li *ngIf="isAuthenticated && !isCollaborateurOnlyUser" class="dropdown" (mouseenter)="showProjectsDropdown = true" (mouseleave)="showProjectsDropdown = false">
         <a (click)="toggleProjectsDropdown(); $event.preventDefault()" style="cursor: pointer;"><i class="fas fa-briefcase"></i> Projects <i class="fas fa-chevron-down"></i></a>
         <ul class="dropdown-menu" [class.show]="showProjectsDropdown">
           <li><a (click)="navigateTo('/projects'); closeProjectsDropdown()" style="cursor: pointer;"><i class="fas fa-list"></i> All projects</a></li>
@@ -46,7 +47,7 @@
           </li>
         </ul>
       </li>
-      <li *ngIf="isAuthenticated" class="dropdown" (mouseenter)="showProfileDropdown = true" (mouseleave)="showProfileDropdown = false">
+      <li *ngIf="isAuthenticated && !isCollaborateurOnlyUser" class="dropdown" (mouseenter)="showProfileDropdown = true" (mouseleave)="showProfileDropdown = false">
         <a (click)="toggleProfileDropdown(); $event.preventDefault()" style="cursor: pointer;"><i class="fas fa-user"></i> Account <i class="fas fa-chevron-down"></i></a>
         <ul class="dropdown-menu" [class.show]="showProfileDropdown">
           <li><a (click)="navigateTo('/profile'); closeProfileDropdown()" style="cursor: pointer;"><i class="fas fa-user-circle"></i> Profile</a></li>
@@ -57,7 +58,7 @@
       </li>
     </ul>
     <div class="nav-actions">
-      <div class="dropdown notifications-dropdown" *ngIf="isAuthenticated" (mouseenter)="showNotificationsDropdown = true" (mouseleave)="showNotificationsDropdown = false">
+      <div class="dropdown notifications-dropdown" *ngIf="isAuthenticated && !isCollaborateurOnlyUser" (mouseenter)="showNotificationsDropdown = true" (mouseleave)="showNotificationsDropdown = false">
         <button type="button" class="icon-btn" (click)="toggleNotificationsDropdown()" aria-label="Notifications" aria-haspopup="true" [attr.aria-expanded]="showNotificationsDropdown">
           <i class="fas fa-bell" aria-hidden="true"></i>
           <span class="notification-badge" *ngIf="unreadCount > 0">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>

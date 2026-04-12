@@ -11,6 +11,7 @@ Desktop.ini
 .env
 .env.*
 !.env.example
+!services/collaborationService/.env.example
 *.pem
 *.p12
 *.jks

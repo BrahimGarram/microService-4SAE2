@@ -8,6 +8,7 @@ import com.freelance.userservice.dto.ResetPasswordRequest;
 import com.freelance.userservice.dto.SuggestFreelancersRequest;
 import com.freelance.userservice.dto.UpdateUserRequest;
 import com.freelance.userservice.dto.UserDTO;
+import com.freelance.userservice.exception.UserAlreadyExistsException;
 import com.freelance.userservice.model.UserRole;
 import com.freelance.userservice.service.KeycloakService;
 import com.freelance.userservice.service.StatisticsService;
@@ -352,40 +353,63 @@ public class UserController {
      * @return UserDTO of created user
      */
     @PostMapping("/register")
-    public ResponseEntity<UserDTO> registerUser(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
+        String keycloakId = null;
         try {
-            // Register user in Keycloak
-            String keycloakId = keycloakService.registerUser(
+            UserRole role = UserRole.valueOf(request.getRole().toUpperCase());
+            // 1) Keycloak d'abord — si MySQL échoue ensuite, on supprime ce compte (pas de transaction distribuée).
+            keycloakId = keycloakService.registerUser(
                 request.getUsername(),
                 request.getEmail(),
                 request.getPassword(),
-                request.getRole()
+                request.getRole().toUpperCase()
             );
-            
-            // Create user in database
-            UserRole role = UserRole.valueOf(request.getRole().toUpperCase());
-            
-            // Extract client IP for geolocation
+
             String forwardedFor = httpRequest != null ? httpRequest.getHeader("X-Forwarded-For") : null;
             String clientIp = httpRequest != null ? httpRequest.getRemoteAddr() : null;
             String ipAddress = ipGeolocationService.extractIpAddress(clientIp, forwardedFor);
-            
-            log.info("Registering user - Client IP: {}, Forwarded-For: {}, Extracted IP: {}", 
+
+            log.info("Registering user - Client IP: {}, Forwarded-For: {}, Extracted IP: {}",
                     clientIp, forwardedFor, ipAddress);
-            
+
             CreateUserRequest createRequest = new CreateUserRequest(
                 keycloakId,
                 request.getUsername(),
                 request.getEmail(),
                 role,
-                null // Country will be detected from IP
+                null
             );
-            
+
             UserDTO user = userService.syncUser(createRequest, ipAddress);
             return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        } catch (UserAlreadyExistsException e) {
+            throw e;
+        } catch (IllegalArgumentException e) {
+            Map<String, String> err = new HashMap<>();
+            err.put("error", "Rôle inconnu : " + request.getRole()
+                + ". Valeurs possibles : USER, FREELANCER, ENTERPRISE, COLLABORATEUR, ADMIN.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(null); // Error will be handled by exception handler
+            if (keycloakId != null) {
+                try {
+                    keycloakService.deleteUser(keycloakId);
+                    log.warn("Keycloak user {} supprimé après échec enregistrement MySQL (cohérence)", keycloakId);
+                } catch (Exception rollbackEx) {
+                    log.error("Impossible de supprimer l'utilisateur Keycloak {} après échec MySQL — compte orphelin possible",
+                            keycloakId, rollbackEx);
+                }
+            }
+            log.error("Registration failed for username={}", request.getUsername(), e);
+            Map<String, String> err = new HashMap<>();
+            String msg = e.getMessage() != null ? e.getMessage() : "Inscription impossible";
+            err.put("error", msg);
+            if (msg.contains("404") || msg.toLowerCase().contains("not found")) {
+                err.put("hint", "Créez le rôle realm exact dans Keycloak (ex. COLLABORATEUR) : Realm → Roles → Create role.");
+            }
+            if (msg.contains("SQL") || msg.contains("Data truncation") || msg.contains("could not execute")) {
+                err.put("hint", "Vérifiez MySQL (connexion, colonne role, contraintes). Détail dans les logs du user-service.");
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
         }
     }
     

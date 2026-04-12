@@ -59,10 +59,15 @@ export class SignupComponent implements OnInit {
       
       // Check for ADMIN role (case-insensitive)
       const isAdmin = userRoles.some((role: string) => role.toUpperCase() === 'ADMIN');
-      
+      const isCollabOnly =
+        !isAdmin &&
+        userRoles.some((role: string) => role.toUpperCase() === 'COLLABORATEUR');
+
       if (isAdmin) {
         console.log('SignupComponent ngOnInit: User is admin, redirecting to /admin/dashboard');
         window.location.href = '/admin/dashboard';
+      } else if (isCollabOnly) {
+        window.location.href = '/collaboration';
       } else {
         console.log('SignupComponent ngOnInit: User is not admin, redirecting to home');
         window.location.href = '/';

@@ -26,6 +26,8 @@ import { FreelancerOnlyComponent } from './components/freelancer-only/freelancer
 import { ComplaintsComponent } from './components/complaints/complaints.component';
 import { AdminComplaintsComponent } from './components/admin-complaints/admin-complaints.component';
 import { PenaltiesComponent } from './components/penalties/penalties.component';
+import { CollaborationComponent } from './components/collaboration/collaboration.component';
+import { AdminCollaborationsComponent } from './components/admin-collaborations/admin-collaborations.component';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { FreelancerGuard } from './guards/freelancer.guard';
@@ -55,6 +57,7 @@ const routes: Routes = [
   { path: 'addquestion', component: AddQuestionComponent, canActivate: [AuthGuard] },
   { path: 'complaints', component: ComplaintsComponent, canActivate: [AuthGuard] },
   { path: 'penalties', component: PenaltiesComponent, canActivate: [AuthGuard] },
+  { path: 'collaboration', component: CollaborationComponent, canActivate: [AuthGuard] },
 
   // Admin routes
   { path: 'admin/dashboard', component: DashboardComponent, canActivate: [AdminGuard] },
@@ -64,6 +67,7 @@ const routes: Routes = [
   { path: 'admin/users/:id', component: PublicProfileComponent, canActivate: [AdminGuard] },
   { path: 'admin/test', component: TestComponent, canActivate: [AdminGuard] },
   { path: 'admin/complaints', component: AdminComplaintsComponent, canActivate: [AdminGuard] },
+  { path: 'admin/collaborations', component: AdminCollaborationsComponent, canActivate: [AdminGuard] },
   { path: 'admin/affectations', component: AffectationComponent, canActivate: [AdminGuard] },
   { path: 'admin/projects', component: ProjectsComponent, canActivate: [AdminGuard] },
   { path: 'admin/settings', component: SettingsComponent, canActivate: [AdminGuard] },

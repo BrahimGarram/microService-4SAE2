@@ -52,6 +52,8 @@ import { FreelancerOnlyComponent } from './components/freelancer-only/freelancer
 import { ComplaintsComponent } from './components/complaints/complaints.component';
 import { AdminComplaintsComponent } from './components/admin-complaints/admin-complaints.component';
 import { PenaltiesComponent } from './components/penalties/penalties.component';
+import { CollaborationComponent } from './components/collaboration/collaboration.component';
+import { AdminCollaborationsComponent } from './components/admin-collaborations/admin-collaborations.component';
 
 /**
  * Initialize Keycloak
@@ -112,7 +114,9 @@ function initializeKeycloak(keycloak: KeycloakService) {
     FreelancerOnlyComponent,
     ComplaintsComponent,
     AdminComplaintsComponent,
-    PenaltiesComponent
+    PenaltiesComponent,
+    CollaborationComponent,
+    AdminCollaborationsComponent
   ],
   imports: [
     BrowserModule,

@@ -7,7 +7,8 @@ package com.freelance.userservice.model;
  * - USER: Regular user
  * - FREELANCER: Freelancer user
  * - ADMIN: Administrator
- * - ENTERPRISE: Company / enterprise (for collaboration service)
+ * - ENTERPRISE: Company / enterprise
+ * - COLLABORATEUR: Partner / advertising collaborator (Symfony collaboration service)
  * 
  * These roles must match the roles defined in Keycloak realm.
  */
@@ -15,5 +16,6 @@ public enum UserRole {
     USER,
     FREELANCER,
     ADMIN,
-    ENTERPRISE
+    ENTERPRISE,
+    COLLABORATEUR
 }

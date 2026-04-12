@@ -9,6 +9,7 @@ import { NotificationService, Notification } from '../../services/notification.s
 import { UserService } from '../../services/user.service';
 import { ProjectService, Project } from '../../services/project.service';
 import { ProposalService } from '../../services/proposal.service';
+import { isCollaborateurOnlyAccount } from '../../utils/role-utils';
 
 @Component({
   selector: 'app-navbar',
@@ -21,6 +22,7 @@ export class NavbarComponent implements OnInit {
   isAuthenticated = false;
   username = '';
   isAdmin = false;
+  isCollaborateurOnlyUser = false;
   showServicesDropdown = false;
   showDiscoverDropdown = false;
   showProjectsDropdown = false;
@@ -229,6 +231,7 @@ export class NavbarComponent implements OnInit {
           this.isAdmin = false;
         }
       }
+      this.isCollaborateurOnlyUser = isCollaborateurOnlyAccount();
     } else {
       // If no token in localStorage, check KeycloakService
       try {
@@ -239,6 +242,7 @@ export class NavbarComponent implements OnInit {
             this.username = userProfile.username || this.username || '';
             const roles = await this.keycloakService.getUserRoles();
             this.isAdmin = roles.some((role: string) => role.toUpperCase() === 'ADMIN');
+            this.isCollaborateurOnlyUser = isCollaborateurOnlyAccount();
           } catch (error) {
             console.error('Error loading user profile:', error);
             // Fallback to localStorage values if KeycloakService fails
@@ -250,6 +254,7 @@ export class NavbarComponent implements OnInit {
           this.isAuthenticated = false;
           this.username = '';
           this.isAdmin = false;
+          this.isCollaborateurOnlyUser = false;
         }
       } catch (error) {
         // If KeycloakService fails, check localStorage as fallback
@@ -257,6 +262,7 @@ export class NavbarComponent implements OnInit {
         if (!this.isAuthenticated) {
           this.username = '';
           this.isAdmin = false;
+          this.isCollaborateurOnlyUser = false;
         }
       }
     }

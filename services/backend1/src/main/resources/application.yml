@@ -59,7 +59,10 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
   instance:
-    prefer-ip-address: true
+    # Dev local Windows : prefer-ip-address=true peut enregistrer une IP d'adaptateur
+    # virtuel (ex. 192.168.189.1) non joignable → la gateway a "Connection refused".
+    hostname: localhost
+    prefer-ip-address: false
 
 # ===============================
 # Keycloak Admin Configuration
