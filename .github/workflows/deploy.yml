@@ -3,11 +3,11 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - master
       - develop
   pull_request:
     branches:
-      - main
+      - master
 
 env:
   DOCKER_REGISTRY: docker.io
@@ -102,7 +102,7 @@ jobs:
   deploy-staging:
     runs-on: ubuntu-latest
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
     environment:
       name: staging
       url: http://staging.example.com
@@ -129,7 +129,7 @@ jobs:
   deploy-prod:
     runs-on: ubuntu-latest
     needs: deploy-staging
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
     environment:
       name: production
       url: http://prod.example.com
