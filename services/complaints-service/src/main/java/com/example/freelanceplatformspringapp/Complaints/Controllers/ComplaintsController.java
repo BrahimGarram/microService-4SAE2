@@ -4,6 +4,7 @@ import com.example.freelanceplatformspringapp.Complaints.Entity.ClaimAttachment;
 import com.example.freelanceplatformspringapp.Complaints.Entity.ClaimPriority;
 import com.example.freelanceplatformspringapp.Complaints.Entity.Complaints;
 import com.example.freelanceplatformspringapp.Complaints.Services.IComplaintsInterface;
+import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
+@AllArgsConstructor
 @RequestMapping("/report")
 @CrossOrigin(
     origins = "http://localhost:4200", 
@@ -27,11 +29,7 @@ import java.util.Optional;
     allowedHeaders = "*"
 )
 public class ComplaintsController {
-    private final IComplaintsInterface ic;
-
-    public ComplaintsController(IComplaintsInterface ic) {
-        this.ic = ic;
-    }
+    IComplaintsInterface ic;
 
     @GetMapping("/retrieve-all-complaints")
     public List<Complaints> retrieveAllComplaints(@RequestParam("userId") Long userId) {
@@ -157,12 +155,7 @@ public class ComplaintsController {
 
     @DeleteMapping("/drop-claim/{claim-id}")
     void deleteClaim(@PathVariable("claim-id") Long claimId,
-                     @RequestParam("userId") Long userId,
-                     @RequestHeader(value = "X-Confirm-Delete", required = false) String confirmDelete) {
-        // Only allow delete when explicitly confirmed by user action (prevents replay/refresh from triggering delete)
-        if (!"true".equalsIgnoreCase(confirmDelete)) {
-            return;
-        }
+                     @RequestParam("userId") Long userId) {
         // Verify the claim belongs to the user and is visible before soft deleting
         Optional<Complaints> existing = ic.retrieveClaimForUser(claimId, userId);
         if (existing.isPresent()) {

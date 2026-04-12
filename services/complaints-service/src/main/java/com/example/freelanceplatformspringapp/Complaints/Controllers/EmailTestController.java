@@ -1,9 +1,11 @@
 package com.example.freelanceplatformspringapp.Complaints.Controllers;
 
 import com.example.freelanceplatformspringapp.Complaints.Services.EmailService;
+import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@AllArgsConstructor
 @RequestMapping("/report/test")
 @CrossOrigin(
     origins = "http://localhost:4200", 
@@ -14,10 +16,6 @@ import org.springframework.web.bind.annotation.*;
 public class EmailTestController {
 
     private final EmailService emailService;
-
-    public EmailTestController(EmailService emailService) {
-        this.emailService = emailService;
-    }
 
     /**
      * Test endpoint to send a test email

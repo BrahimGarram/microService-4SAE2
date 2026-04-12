@@ -3,8 +3,8 @@ package com.example.freelanceplatformspringapp.Complaints.Services;
 import com.example.freelanceplatformspringapp.Complaints.Entity.*;
 import com.example.freelanceplatformspringapp.Complaints.Repository.ComplaintsRepository;
 import com.example.freelanceplatformspringapp.Complaints.Repository.PenaltyRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,19 +14,13 @@ import java.util.Date;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
+@Slf4j
 public class PenaltyRulesEngine {
-
-    private static final Logger log = LoggerFactory.getLogger(PenaltyRulesEngine.class);
 
     private final PenaltyRepository penaltyRepository;
     private final ComplaintsRepository complaintsRepository;
     private final EmailService emailService;
-
-    public PenaltyRulesEngine(PenaltyRepository penaltyRepository, ComplaintsRepository complaintsRepository, EmailService emailService) {
-        this.penaltyRepository = penaltyRepository;
-        this.complaintsRepository = complaintsRepository;
-        this.emailService = emailService;
-    }
 
     /**
      * Evaluate all rules for a user and apply penalties if needed

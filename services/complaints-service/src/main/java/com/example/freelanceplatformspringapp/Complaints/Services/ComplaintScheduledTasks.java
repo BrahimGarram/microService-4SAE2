@@ -3,8 +3,8 @@ package com.example.freelanceplatformspringapp.Complaints.Services;
 import com.example.freelanceplatformspringapp.Complaints.Entity.ClaimStatus;
 import com.example.freelanceplatformspringapp.Complaints.Entity.Complaints;
 import com.example.freelanceplatformspringapp.Complaints.Repository.ComplaintsRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,21 +16,14 @@ import java.util.Date;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
+@Slf4j
 public class ComplaintScheduledTasks {
-
-    private static final Logger log = LoggerFactory.getLogger(ComplaintScheduledTasks.class);
 
     private final ComplaintsRepository complaintsRepository;
     private final EmailService emailService;
     private final RestTemplate restTemplate;
     private final PenaltyRulesEngine penaltyRulesEngine;
-
-    public ComplaintScheduledTasks(ComplaintsRepository complaintsRepository, EmailService emailService, RestTemplate restTemplate, PenaltyRulesEngine penaltyRulesEngine) {
-        this.complaintsRepository = complaintsRepository;
-        this.emailService = emailService;
-        this.restTemplate = restTemplate;
-        this.penaltyRulesEngine = penaltyRulesEngine;
-    }
 
     /**
      * Send reminder emails for pending complaints (runs every day at 9 AM)

@@ -2,29 +2,23 @@ package com.example.freelanceplatformspringapp.Complaints.Services;
 import com.example.freelanceplatformspringapp.Complaints.Entity.Complaints;
 import com.example.freelanceplatformspringapp.Complaints.Entity.ClaimStatus;
 import com.example.freelanceplatformspringapp.Complaints.Repository.ComplaintsRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class ComplaintsService implements IComplaintsInterface {
     private final ComplaintsRepository cr;
     private final AutoAssignmentService autoAssignmentService;
     private final EmailService emailService;
-    private final RestTemplate restTemplate;
+    private final org.springframework.web.client.RestTemplate restTemplate;
     private final PenaltyRulesEngine penaltyRulesEngine;
-
-    public ComplaintsService(ComplaintsRepository cr, AutoAssignmentService autoAssignmentService, EmailService emailService, RestTemplate restTemplate, PenaltyRulesEngine penaltyRulesEngine) {
-        this.cr = cr;
-        this.autoAssignmentService = autoAssignmentService;
-        this.emailService = emailService;
-        this.restTemplate = restTemplate;
-        this.penaltyRulesEngine = penaltyRulesEngine;
-    }
 
     @Override
     public Complaints addClaim(Complaints complaints) {
@@ -155,9 +149,6 @@ public class ComplaintsService implements IComplaintsInterface {
             
             // Preserve createdAt - never change it
             complaints.setCreatedAt(existing.getCreatedAt());
-            
-            // Preserve isVisible - only soft-delete endpoint (deleteComplaint) may set it to false
-            complaints.setVisible(existing.isVisible());
             
             // Always set updatedAt to now
             complaints.setUpdatedAt(new Date());

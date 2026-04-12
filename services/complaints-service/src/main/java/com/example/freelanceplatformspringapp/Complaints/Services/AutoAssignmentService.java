@@ -2,17 +2,15 @@ package com.example.freelanceplatformspringapp.Complaints.Services;
 
 import com.example.freelanceplatformspringapp.Complaints.Entity.ClaimCategory;
 import com.example.freelanceplatformspringapp.Complaints.Entity.Complaints;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class AutoAssignmentService {
-
-    private static final Logger log = LoggerFactory.getLogger(AutoAssignmentService.class);
 
     // Map categories to admin IDs (you can make this configurable via database)
     private final Map<ClaimCategory, Long> categoryToAdminMap = new HashMap<>();
