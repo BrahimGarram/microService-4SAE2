@@ -10,6 +10,7 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { environment } from '../environments/environment';
+import { getKeycloakUrl } from './utils/keycloak-url';
 
 export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -64,7 +65,7 @@ function initializeKeycloak(keycloak: KeycloakService) {
   return () => {
     return keycloak.init({
       config: {
-        url: environment.keycloakUrl,
+        url: getKeycloakUrl(),
         realm: environment.keycloakRealm,
         clientId: environment.keycloakClientId
       },

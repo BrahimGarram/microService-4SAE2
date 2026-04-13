@@ -6,6 +6,7 @@ import { AccessibilityService } from './services/accessibility.service';
 import { environment } from '../environments/environment';
 import { CollaborationApiService, CollaborationPublicDto } from './services/collaboration-api.service';
 import { isCollaborateurOnlyAccount } from './utils/role-utils';
+import { rewriteLegacyGatewayUrl } from './utils/gateway-url';
 
 @Component({
   selector: 'app-root',
@@ -254,7 +255,7 @@ export class AppComponent implements OnInit {
    */
   private async syncUserToBackend(token: string) {
     try {
-      const response = await fetch(`${environment.apiGatewayUrl}/user/sync`, {
+      const response = await fetch(rewriteLegacyGatewayUrl(`${environment.apiGatewayUrl}/user/sync`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

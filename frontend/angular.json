@@ -87,7 +87,12 @@
               "buildTarget": "freelance-platform:build:production"
             },
             "development": {
-              "buildTarget": "freelance-platform:build:development"
+              "buildTarget": "freelance-platform:build:development",
+              "proxyConfig": "proxy.conf.json"
+            },
+            "docker": {
+              "buildTarget": "freelance-platform:build:docker",
+              "proxyConfig": "proxy.conf.docker.json"
             }
           },
           "defaultConfiguration": "development"

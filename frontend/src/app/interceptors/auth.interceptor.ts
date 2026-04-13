@@ -5,6 +5,8 @@ import { switchMap, catchError } from 'rxjs/operators';
 import { KeycloakService } from 'keycloak-angular';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
+import { rewriteLegacyGatewayUrl } from '../utils/gateway-url';
+import { getKeycloakUrl } from '../utils/keycloak-url';
 
 /**
  * Auth Interceptor
@@ -50,7 +52,7 @@ export class AuthInterceptor implements HttpInterceptor {
     }
     
     try {
-      const keycloakUrl = environment.keycloakUrl;
+      const keycloakUrl = getKeycloakUrl();
       const realm = environment.keycloakRealm;
       const clientId = environment.keycloakClientId;
 
@@ -105,6 +107,10 @@ export class AuthInterceptor implements HttpInterceptor {
   }
   
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const fixedUrl = rewriteLegacyGatewayUrl(request.url);
+    if (fixedUrl !== request.url) {
+      request = request.clone({ url: fixedUrl });
+    }
     // Try to get token from Keycloak first
     return from(this.keycloakService.getToken().catch(() => null)).pipe(
       switchMap((token) => {

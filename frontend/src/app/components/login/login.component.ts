@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
+import { getKeycloakUrl } from '../../utils/keycloak-url';
 
 @Component({
   selector: 'app-login',
@@ -99,7 +100,7 @@ export class LoginComponent implements OnInit {
       formData.append('password', this.signInForm.password);
 
       const response: any = await this.http.post(
-        `${environment.keycloakUrl}/realms/${this.realm}/protocol/openid-connect/token`,
+        `${getKeycloakUrl()}/realms/${this.realm}/protocol/openid-connect/token`,
         formData.toString(),
         {
           headers: new HttpHeaders({
@@ -243,7 +244,7 @@ export class LoginComponent implements OnInit {
    */
   loginWithGoogle() {
     const redirectUri = encodeURIComponent(window.location.origin);
-    const googleLoginUrl = `${environment.keycloakUrl}/realms/${this.realm}/protocol/openid-connect/auth?` +
+    const googleLoginUrl = `${getKeycloakUrl()}/realms/${this.realm}/protocol/openid-connect/auth?` +
       `client_id=${this.clientId}&` +
       `redirect_uri=${redirectUri}&` +
       `response_type=code&` +
@@ -258,7 +259,7 @@ export class LoginComponent implements OnInit {
    */
   loginWithGitHub() {
     const redirectUri = encodeURIComponent(window.location.origin);
-    const githubLoginUrl = `${environment.keycloakUrl}/realms/${this.realm}/protocol/openid-connect/auth?` +
+    const githubLoginUrl = `${getKeycloakUrl()}/realms/${this.realm}/protocol/openid-connect/auth?` +
       `client_id=${this.clientId}&` +
       `redirect_uri=${redirectUri}&` +
       `response_type=code&` +

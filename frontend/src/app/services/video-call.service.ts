@@ -9,9 +9,17 @@ export interface IncomingCall {
 
 function websocketHttpBase(): string {
   const g = environment.apiGatewayUrl?.trim();
+  if (g?.startsWith('/')) {
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return window.location.origin + g;
+    }
+    return `http://localhost:4200${g}`;
+  }
   if (g) return g;
-  if (typeof window !== 'undefined' && window.location?.origin) return window.location.origin;
-  return 'http://localhost:8090';
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin + '/gateway';
+  }
+  return 'http://localhost:4200/gateway';
 }
 
 @Injectable({

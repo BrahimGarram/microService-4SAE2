@@ -1,4 +1,17 @@
+# OpenAPI / Swagger UI (WebFlux — gateway)
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
+  show-actuator: false
+
 # CORS : un seul jeu d'en-têtes (filtre Java supprime ceux des backends puis ajoute ceux du gateway)
+# gateway.cors : YAML pour [::1] sans ambiguïté des crochets dans .properties
+gateway:
+  cors:
+    allowed-origins: "${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200,http://[::1]:4200}"
+
 spring:
   # Uploads collaboration (multipart) : évite DataBufferLimitException côté gateway
   codec:
@@ -9,9 +22,11 @@ spring:
         add-to-simple-url-handler-mapping: true
         cors-configurations:
           '[/**]':
+            # Doublon volontaire avec gateway.cors (sync écrase depuis la même propriété) — si sync échoue, le prévol a quand même des origines.
             allowedOrigins:
               - "http://localhost:4200"
               - "http://127.0.0.1:4200"
+              - "http://[::1]:4200"
             allowedMethods:
               - GET
               - POST
@@ -19,6 +34,13 @@ spring:
               - PATCH
               - DELETE
               - OPTIONS
-            allowedHeaders: "*"
+            # Pas de "*" avec allowCredentials: true (rejet preflight navigateur)
+            allowedHeaders:
+              - Authorization
+              - Content-Type
+              - Accept
+              - Accept-Language
+              - Origin
+              - X-Requested-With
             allowCredentials: true
             maxAge: 3600

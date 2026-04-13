@@ -5,6 +5,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -23,18 +24,19 @@ import java.util.Set;
 @Order(Ordered.LOWEST_PRECEDENCE)
 public class CorsFixGlobalFilter implements WebFilter {
 
-    private static final Set<String> ALLOWED_ORIGINS = Set.of(
-            "http://localhost:4200",
-            "http://127.0.0.1:4200"
-    );
-    private static final String DEFAULT_ORIGIN = "http://localhost:4200";
+    private final Set<String> allowedOrigins;
+
+    public CorsFixGlobalFilter(
+            @Value("${gateway.cors.allowed-origins:http://localhost:4200,http://127.0.0.1:4200,http://[::1]:4200}") String allowedOriginsCsv) {
+        this.allowedOrigins = CorsAllowedOrigins.asSet(allowedOriginsCsv);
+    }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String requestOrigin = exchange.getRequest().getHeaders().getFirst(HttpHeaders.ORIGIN);
-        String allowOrigin = (requestOrigin != null && ALLOWED_ORIGINS.contains(requestOrigin))
+        final String allowOrigin = (requestOrigin != null && allowedOrigins.contains(requestOrigin))
                 ? requestOrigin
-                : DEFAULT_ORIGIN;
+                : null;
 
         ServerHttpResponse originalResponse = exchange.getResponse();
         ServerHttpResponseDecorator response = new ServerHttpResponseDecorator(originalResponse) {
@@ -44,11 +46,20 @@ public class CorsFixGlobalFilter implements WebFilter {
                 HttpHeaders headers = new HttpHeaders();
                 headers.addAll(super.getHeaders());
                 removeCorsHeaders(headers);
-                headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigin);
-                headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-                headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-                headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "*");
-                headers.set(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600");
+                if (allowOrigin != null) {
+                    headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigin);
+                    headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+                    headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+                    // Avec credentials=true, les navigateurs refusent Allow-Headers: * (preflight échoue).
+                    // Répercuter la demande du client ou une liste explicite (ex. Authorization via Keycloak).
+                    String reqHeaders = exchange.getRequest().getHeaders()
+                            .getFirst(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS);
+                    String allowHeaders = (reqHeaders != null && !reqHeaders.isBlank())
+                            ? reqHeaders
+                            : "Authorization, Content-Type, Accept, Accept-Language, Origin, X-Requested-With";
+                    headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, allowHeaders);
+                    headers.set(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600");
+                }
                 return headers;
             }
         };

@@ -1,0 +1,6 @@
+# Valeurs Helm — chart prometheus-community/prometheus (adapter selon ton cluster)
+# helm show values prometheus-community/prometheus
+server:
+  persistentVolume:
+    enabled: true
+    size: 8Gi
