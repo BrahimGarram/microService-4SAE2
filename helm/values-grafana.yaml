@@ -1,6 +1,0 @@
-# Valeurs Helm — chart grafana/grafana
-# helm show values grafana/grafana
-adminUser: admin
-persistence:
-  enabled: true
-  size: 2Gi

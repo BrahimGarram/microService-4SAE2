@@ -1,7 +1,0 @@
-# Namespace pour la stack monitoring (Prometheus / Grafana) — appliqué avant Helm.
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: freelance-monitoring
-  labels:
-    app.kubernetes.io/part-of: freelance-platform

@@ -1,0 +1,3 @@
+@echo off
+echo Starting Subscription Service...
+mvnw.cmd spring-boot:run
