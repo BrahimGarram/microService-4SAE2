@@ -23,32 +23,25 @@ spring:
 server:
   port: 8082  # Different port from user-service (8081)
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
-    register-with-eureka: true
-    fetch-registry: true
-  instance:
-    prefer-ip-address: true
-    instance-id: ${spring.application.name}:${server.port}
-    # appname must match gateway lb://project-service
-
 # Application Configuration
 app:
   frontend:
     url: http://localhost:4200
   base:
     url: http://localhost:8082
-  # Token costs (0 = pas de wallet / payment-service)
-  tokens-per-project: 0
-  tokens-per-proposal: 0
 
 # Ollama (local LLM) - for AI draft-from-text
 ollama:
   base-url: http://localhost:11434
   model: qwen2.5:3b
   timeout-seconds: 60
+
+# Actuator (santé Docker — /actuator/health)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
 
 # Logging Configuration
 logging:

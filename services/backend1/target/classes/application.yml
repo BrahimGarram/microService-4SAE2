@@ -98,6 +98,18 @@ ollama:
   timeout-seconds: 60
 
 # ===============================
+# OpenAPI / Swagger UI (springdoc)
+# ===============================
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
+    operations-sorter: method
+    tags-sorter: alpha
+  show-actuator: false
+
+# ===============================
 # Logging Configuration
 # ===============================
 logging:

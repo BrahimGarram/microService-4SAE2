@@ -95,6 +95,7 @@ C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\j
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\repository\PostCommentRepository.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\dto\ActivityPeriodDTO.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\dto\CreatePostRequest.java
+C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\config\OpenApiConfig.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\controller\NotificationController.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\service\NotificationService.java
 C:\Users\21694\Desktop\freelance-management - Copie\services\backend1\src\main\java\com\freelance\userservice\config\RestTemplateConfig.java

@@ -61,6 +61,7 @@ public class SecurityConfig {
             
             // Configure authorization rules
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 // WebSocket upgrade for WebRTC signaling (JWT validated in handshake interceptor)
                 .requestMatchers("/ws/**").permitAll()

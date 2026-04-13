@@ -71,6 +71,13 @@ app:
     url: http://localhost:4200
   base-url: http://localhost:4200
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
+  show-actuator: false
+
 logging:
   level:
     org.hibernate.SQL: DEBUG
