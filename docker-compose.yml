@@ -155,6 +155,26 @@ services:
       EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
       EUREKA_CLIENT_FETCH_REGISTRY: "true"
 
+  project-service:
+    build: ./services/project-service
+    image: brahim2002/project-service:latest
+    pull_policy: build
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+    ports:
+      - "18082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/freelance_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+      EUREKA_CLIENT_FETCH_REGISTRY: "true"
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+
   collaboration-service:
     build: ./services/collaborationService
     pull_policy: build
@@ -188,6 +208,8 @@ services:
         condition: service_started
       collaboration-service:
         condition: service_started
+      project-service:
+        condition: service_started
     ports:
       - "18090:8090"
     environment:
@@ -198,6 +220,7 @@ services:
       GATEWAY_USER_SERVICE_URI: http://user-service:8081
       GATEWAY_SERVICE_TEST_URI: http://service-test:8089
       GATEWAY_COLLABORATION_URI: http://collaboration-service:80
+      GATEWAY_PROJECT_SERVICE_URI: http://project-service:8082
 
   frontend:
     build: ./frontend

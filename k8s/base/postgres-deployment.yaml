@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-collab
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-collab
+  template:
+    metadata:
+      labels:
+        app: postgres-collab
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: "collab"
+        - name: POSTGRES_PASSWORD
+          value: "collab"
+        - name: POSTGRES_DB
+          value: "collaboration_db"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-collab
+  namespace: microservices
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres-collab
+  ports:
+  - port: 5432
+    targetPort: 5432

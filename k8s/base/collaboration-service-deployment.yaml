@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collaboration-service
+  namespace: microservices
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: collaboration-service
+  template:
+    metadata:
+      labels:
+        app: collaboration-service
+    spec:
+      containers:
+      - name: collaboration-service
+        image: brahim2002/collaboration-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        env:
+        - name: APP_ENV
+          value: "prod"
+        - name: APP_SECRET
+          value: "collaboration_app_secret_replace_in_prod_minimum_32c"
+        - name: DATABASE_URL
+          value: "postgresql://collab:collab@postgres-collab:5432/collaboration_db?serverVersion=16"
+        - name: KEYCLOAK_BASE_URL
+          value: "http://keycloak:8080"
+        - name: KEYCLOAK_REALM
+          value: "projetpidev"
+        - name: MESSENGER_TRANSPORT_DSN
+          value: "sync://"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collaboration-service
+  namespace: microservices
+spec:
+  type: ClusterIP
+  selector:
+    app: collaboration-service
+  ports:
+  - port: 80
+    targetPort: 80

@@ -27,6 +27,8 @@ jobs:
             context: ./ApiGateway4sae2
           - name: complaints-service
             context: ./services/complaints-service
+          - name: project-service
+            context: ./services/project-service
     
     steps:
       - name: Checkout code

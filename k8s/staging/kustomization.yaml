@@ -8,11 +8,18 @@ resources:
   - ../base/eureka-deployment.yaml
   - ../base/mysql-deployment.yaml
   - ../base/rabbitmq-deployment.yaml
+  - ../base/postgres-deployment.yaml
   - ../base/user-service-deployment.yaml
+  - ../base/project-service-deployment.yaml
+  - ../base/collaboration-service-deployment.yaml
   - ../base/api-gateway-deployment.yaml
 
 replicas:
   - name: user-service
+    count: 2
+  - name: project-service
+    count: 2
+  - name: collaboration-service
     count: 2
   - name: api-gateway
     count: 2
