@@ -1,8 +1,22 @@
-version: '3.8'
-
 services:
 
   # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.5
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8180
+    ports:
+      - "8180:8180"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8180/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -51,6 +65,12 @@ services:
     depends_on:
       eureka:
         condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://keycloak:8180/realms/projetpidev
+      KEYCLOAK_JWK_URI: http://keycloak:8180/realms/projetpidev/protocol/openid-connect/certs
 
   project-service:
     build: ./project-service

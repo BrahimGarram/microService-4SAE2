@@ -29,11 +29,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          # Keycloak JWT Issuer URI
-          # Replace with your Keycloak server URL
-          issuer-uri: http://localhost:8180/realms/projetpidev
-          # JWT validation settings
-          jwk-set-uri: http://localhost:8180/realms/projetpidev/protocol/openid-connect/certs
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/projetpidev}
+          jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8180/realms/projetpidev/protocol/openid-connect/certs}
   
   # Email Configuration (for password reset)
   mail:
