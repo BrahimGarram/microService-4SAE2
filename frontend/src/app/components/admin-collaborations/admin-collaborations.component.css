@@ -1,0 +1,67 @@
+.admin-collab {
+  padding: 1.5rem;
+}
+
+.sub {
+  color: #718096;
+  margin-bottom: 1.5rem;
+}
+
+.muted {
+  color: #a0aec0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.table th,
+.table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #edf2f7;
+  vertical-align: middle;
+}
+
+.mono {
+  font-size: 0.75rem;
+  word-break: break-all;
+  max-width: 200px;
+}
+
+.preview img,
+.preview video {
+  max-width: 120px;
+  max-height: 80px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.actions {
+  white-space: nowrap;
+}
+
+.btn-ok,
+.btn-no {
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: none;
+  margin-right: 0.35rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-ok {
+  background: #48bb78;
+  color: #fff;
+}
+
+.btn-no {
+  background: #fc8181;
+  color: #1a202c;
+}

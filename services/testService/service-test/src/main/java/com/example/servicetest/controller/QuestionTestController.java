@@ -1,11 +1,15 @@
 package com.example.servicetest.controller;
 
-import com.example.servicetest.Dto.ProjectDTO;
 import com.example.servicetest.entity.Domain;
 import com.example.servicetest.entity.QuestionTest;
 import com.example.servicetest.service.QuestionTestService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.servicetest.api.Views;
+import com.example.servicetest.api.AiQuestionGenerateRequest;
+import com.example.servicetest.api.AiQuestionGenerateResponse;
+import com.example.servicetest.service.AiQuestionAgentClient;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -18,9 +22,12 @@ public class QuestionTestController {
     @Autowired
     private QuestionTestService questionTestService;
 
+    @Autowired
+    private AiQuestionAgentClient aiQuestionAgentClient;
+
     // CREATE
     @PostMapping
-    public QuestionTest createQuestion(@RequestBody QuestionTest question) {
+    public QuestionTest createQuestion(@Valid @RequestBody QuestionTest question) {
         return questionTestService.addQuestion(question);
     }
 
@@ -30,16 +37,28 @@ public class QuestionTestController {
         return questionTestService.getAllQuestions();
     }
 
-    // READ BY ID
+    // READ BY ID (admin : renvoie tous les champs de la question)
     @GetMapping("/{id}")
     public QuestionTest getQuestionById(@PathVariable Long id) {
         return questionTestService.getQuestionById(id);
     }
 
+    /**
+     * Endpoint admin : demande à l'agent IA (microservice Python) de générer des questions.
+     * L'agent est STRICTEMENT dédié à la génération de questions.
+     */
+    @PostMapping("/ai/generate")
+    public ResponseEntity<AiQuestionGenerateResponse> generateQuestionsWithAi(
+            @RequestBody AiQuestionGenerateRequest request
+    ) {
+        AiQuestionGenerateResponse response = aiQuestionAgentClient.generateQuestions(request);
+        return ResponseEntity.ok(response);
+    }
+
     // UPDATE
     @PutMapping("/{id}")
     public QuestionTest updateQuestion(@PathVariable Long id,
-                                       @RequestBody QuestionTest question) {
+                                       @Valid @RequestBody QuestionTest question) {
         return questionTestService.updateQuestion(id, question);
     }
 
@@ -58,8 +77,6 @@ public class QuestionTestController {
       return questionTestService.getBalancedQuestionsByDomains(domains,8);
 
     }
-@RequestMapping("/sahm")
-    public ResponseEntity<List<ProjectDTO>> getallProjects(){
-        return questionTestService.getallProjects();
-    }
+
+
 }

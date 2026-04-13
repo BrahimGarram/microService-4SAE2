@@ -1,31 +1,43 @@
 package com.example.servicetest.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+import com.example.servicetest.api.Views;
+import com.example.servicetest.validation.ValidQuestionTest;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
+@ValidQuestionTest
 public class QuestionTest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Question text is required (10 to 1000 characters).")
+    @Size(min = 10, max = 1000, message = "Question text must be between 10 and 1000 characters.")
     @Column(nullable = false, length = 1000)
     private String questionText;
 
+    @NotNull(message = "Domain is required.")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Domain domain;
 
+    @NotNull(message = "Question type is required.")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private QuestionType questionType;
 
+    @NotNull(message = "Difficulty level is required.")
     @Enumerated(EnumType.STRING)
     private DifficultyLevel difficultyLevel;
 
+    @Min(value = 1, message = "Duration must be at least 1 second.")
     private Integer duration;
 
     @ElementCollection
@@ -38,7 +50,29 @@ public class QuestionTest {
 
     private Boolean isActive = true;
 
+    /** Questions CODING : langage (java, python, javascript) */
+    @Column(length = 50)
+    private String language;
+
+    /** Questions CODING : code de départ dans l'éditeur */
+    @Lob
+    private String starterCode;
+
+    /** Questions CODING : cas de test JSON - jamais envoyé au candidat (vue Public). LONGTEXT pour éviter troncature (TINYTEXT = 255 octets). */
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String testCasesJson;
+
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    /** Statistiques de qualité : nombre total de tentatives où cette question est apparue. */
+    private Integer attemptsCount = 0;
+
+    /** Statistiques de qualité : nombre de fois où la question a été réussie. */
+    private Integer successCount = 0;
+
+    /** Statistiques de qualité : temps moyen passé (en secondes, approximatif). */
+    private Double avgTimeSeconds = 0.0;
 
     // 🔥 On ignore pour éviter la boucle infinie
     @JsonIgnore
@@ -75,7 +109,41 @@ public class QuestionTest {
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean active) { isActive = active; }
 
+    public String getLanguage() { return language; }
+    public void setLanguage(String language) { this.language = language; }
+
+    public String getStarterCode() { return starterCode; }
+    public void setStarterCode(String starterCode) { this.starterCode = starterCode; }
+
+    @JsonView(Views.Admin.class)
+    public String getTestCasesJson() { return testCasesJson; }
+    public void setTestCasesJson(String testCasesJson) { this.testCasesJson = testCasesJson; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     public Set<AffectationTest> getAffectations() { return affectations; }
+
+    public Integer getAttemptsCount() {
+        return attemptsCount;
+    }
+
+    public void setAttemptsCount(Integer attemptsCount) {
+        this.attemptsCount = attemptsCount;
+    }
+
+    public Integer getSuccessCount() {
+        return successCount;
+    }
+
+    public void setSuccessCount(Integer successCount) {
+        this.successCount = successCount;
+    }
+
+    public Double getAvgTimeSeconds() {
+        return avgTimeSeconds;
+    }
+
+    public void setAvgTimeSeconds(Double avgTimeSeconds) {
+        this.avgTimeSeconds = avgTimeSeconds;
+    }
 }

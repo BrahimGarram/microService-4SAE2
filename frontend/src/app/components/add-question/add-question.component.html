@@ -1,0 +1,197 @@
+<div class="page-content add-question-page">
+  <header class="page-header-modern">
+    <div class="page-header-inner">
+      <div class="page-header-text">
+        <h1>New question</h1>
+        <p>Create a question for freelancer tests</p>
+      </div>
+      <button type="button" class="btn-back-modern" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+    </div>
+  </header>
+
+  <div class="form-card-modern">
+        <!-- Validation alert (shown on Save when form is invalid) -->
+        <div class="validation-alert" *ngIf="showValidationErrors && form.invalid" role="alert">
+          <i class="fas fa-exclamation-triangle"></i>
+          <div class="validation-alert-content">
+            <strong>Please fix the errors below</strong>
+            <p>Some required fields are missing or invalid. For QCM, provide at least 2 answer choices.</p>
+          </div>
+        </div>
+
+        <!-- Backend validation errors (displayed in red) -->
+        <div class="validation-alert backend-errors-list" *ngIf="backendValidationErrors.length > 0" role="alert">
+          <i class="fas fa-exclamation-circle"></i>
+          <div class="validation-alert-content">
+            <strong>Validation (server)</strong>
+            <ul class="backend-errors-ul">
+              <li *ngFor="let e of backendValidationErrors" class="error-msg">{{ e.message }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+          <div class="form-grid">
+            <!-- Question text -->
+            <div class="form-group full-width">
+              <label for="questionText">Question text <span class="required">*</span></label>
+              <textarea
+                id="questionText"
+                formControlName="questionText"
+                rows="4"
+                placeholder="Enter the question..."
+                maxlength="1000"
+              ></textarea>
+              <span class="char-count">{{ form.get('questionText')?.value?.length || 0 }}/1000</span>
+              <span class="error-msg" *ngIf="form.get('questionText')?.invalid && form.get('questionText')?.touched">
+                Question is required (min. 10 characters).
+              </span>
+            </div>
+
+            <!-- Domain -->
+            <div class="form-group">
+              <label for="domain">Domain <span class="required">*</span></label>
+              <select id="domain" formControlName="domain">
+                <option value="">-- Select --</option>
+                <option *ngFor="let d of domains" [value]="d">{{ d }}</option>
+              </select>
+              <span class="error-msg" *ngIf="form.get('domain')?.invalid && form.get('domain')?.touched">
+                Domain is required.
+              </span>
+            </div>
+
+            <!-- Question type -->
+            <div class="form-group">
+              <label for="questionType">Question type <span class="required">*</span></label>
+              <select id="questionType" formControlName="questionType">
+                <option value="">-- Select --</option>
+                <option value="QCM_SIMPLE">QCM Simple</option>
+                <option value="CODING">Coding</option>
+                <option value="VRAI_FAUX">True / False</option>
+              </select>
+              <span class="error-msg" *ngIf="form.get('questionType')?.invalid && form.get('questionType')?.touched">
+                Type is required.
+              </span>
+            </div>
+
+            <!-- Difficulty -->
+            <div class="form-group">
+              <label for="difficultyLevel">Difficulty level <span class="required">*</span></label>
+              <select id="difficultyLevel" formControlName="difficultyLevel">
+                <option value="">-- Select --</option>
+                <option value="EASY">Easy</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HARD">Hard</option>
+                <option value="EXPERT">Expert</option>
+              </select>
+              <span class="error-msg" *ngIf="form.get('difficultyLevel')?.invalid && form.get('difficultyLevel')?.touched">
+                Difficulty level is required.
+              </span>
+            </div>
+
+            <!-- Duration -->
+            <div class="form-group">
+              <label for="duration">Duration (seconds)</label>
+              <input
+                type="number"
+                id="duration"
+                formControlName="duration"
+                min="1"
+                placeholder="60"
+              />
+            </div>
+
+            <!-- Choices (QCM) - shown only for QCM Simple -->
+            <ng-container *ngIf="showChoices" formArrayName="choices">
+              <div class="form-group full-width choices-section">
+                <div class="choices-header">
+                  <label><i class="fas fa-list-ul"></i> Answer choices (QCM)</label>
+                  <span class="choices-count">{{ choices.length }} choices</span>
+                </div>
+                <div class="choice-error-inline" *ngIf="choicesMinError && (form.get('choices')?.touched || showValidationErrors)">
+                  <i class="fas fa-info-circle"></i>
+                  At least 2 choices are required for QCM.
+                </div>
+                <div class="choices-list">
+                  <div class="choice-item" *ngFor="let c of choices.controls; let i = index">
+                    <span class="choice-number">{{ i + 1 }}</span>
+                    <input
+                      type="text"
+                      [formControlName]="i"
+                      placeholder="Enter choice {{ i + 1 }}..."
+                      class="choice-input"
+                    />
+                    <div class="choice-actions">
+                      <button type="button" class="btn-choice btn-add" (click)="addChoice()" title="Add choice">
+                        <i class="fas fa-plus"></i>
+                      </button>
+                      <button type="button" class="btn-choice btn-remove" (click)="removeChoice(i)" [disabled]="choices.length <= 1" title="Remove this choice">
+                        <i class="fas fa-minus"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="btn-add-choice-block" (click)="addChoice()">
+                  <i class="fas fa-plus"></i>
+                  <span>Add another choice</span>
+                </button>
+              </div>
+            </ng-container>
+
+            <!-- CODING fields -->
+            <ng-container *ngIf="showCodingFields">
+              <div class="form-group">
+                <label for="language">Language</label>
+                <select id="language" formControlName="language">
+                  <option *ngFor="let lang of codingLanguages" [value]="lang">{{ lang }}</option>
+                </select>
+              </div>
+              <div class="form-group full-width">
+                <label for="starterCode">Starter code (shown in editor)</label>
+                <textarea id="starterCode" formControlName="starterCode" rows="8" placeholder="public class Main { ... }" class="code-textarea"></textarea>
+              </div>
+              <div class="form-group full-width">
+                <label for="testCasesJson">Test cases (JSON)</label>
+                <textarea id="testCasesJson" formControlName="testCasesJson" rows="6" placeholder='[{"input":"1\n2","expectedOutput":"3"},{"input":"0\n0","expectedOutput":"0"}]' class="code-textarea"></textarea>
+                <span class="hint">Array of objects with "input" (stdin) and "expectedOutput" (expected stdout). Not visible to the candidate.</span>
+              </div>
+            </ng-container>
+
+            <!-- Correct answer -->
+            <div class="form-group full-width" *ngIf="!showCodingFields">
+              <label for="correctAnswer">Correct answer <span class="required">*</span></label>
+              <textarea
+                id="correctAnswer"
+                formControlName="correctAnswer"
+                rows="3"
+                placeholder="Expected answer or explanation..."
+              ></textarea>
+              <span class="error-msg" *ngIf="form.get('correctAnswer')?.invalid && form.get('correctAnswer')?.touched">
+                Correct answer is required.
+              </span>
+            </div>
+            <div class="form-group full-width" *ngIf="showCodingFields">
+              <p class="hint">CODING questions are graded automatically via test cases (no correct answer to enter).</p>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" (click)="goBack()">Cancel</button>
+            <button type="submit" class="btn-submit" [disabled]="isSubmitting">
+              <i class="fas fa-check" *ngIf="!isSubmitting"></i>
+              <span *ngIf="isSubmitting" class="spinner-small"></span>
+              {{ isSubmitting ? 'Saving...' : 'Save question' }}
+            </button>
+          </div>
+        </form>
+
+        <div class="message error-msg" *ngIf="errorMessage">
+          <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+        </div>
+        <div class="message success-msg" *ngIf="successMessage">
+          <i class="fas fa-check-circle"></i> {{ successMessage }}
+        </div>
+      </div>
+</div>

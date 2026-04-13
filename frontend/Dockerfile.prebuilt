@@ -1,0 +1,10 @@
+# Image nginx uniquement : compiler d'abord sur l'hôte (évite ng build dans Docker → EOF / OOM sur Windows).
+#   cd frontend
+#   npm run build -- --configuration=docker
+#   docker build -f Dockerfile.prebuilt -t brahim2002/frontend:latest .
+# Puis : docker compose up -d (sans --build sur frontend si l'image existe déjà)
+
+FROM nginx:alpine
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY dist/freelance-platform /usr/share/nginx/html
+EXPOSE 80

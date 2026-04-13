@@ -1,0 +1,306 @@
+<div class="messaging-page">
+  <div class="messaging-container">
+    
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1><i class="fas fa-envelope"></i> Messages</h1>
+      <p *ngIf="unreadCount > 0" class="unread-badge">
+        {{ unreadCount }} {{ unreadCount === 1 ? 'unread message' : 'unread messages' }}
+      </p>
+    </div>
+
+    <div class="messaging-layout">
+      <!-- Conversations Sidebar -->
+      <div class="conversations-sidebar">
+        <div class="sidebar-header">
+          <h2>Conversations</h2>
+          <div class="sidebar-header-buttons">
+            <button class="btn-new-conversation" (click)="router.navigate(['/browse-users'])">
+              <i class="fas fa-plus"></i> New
+            </button>
+            <button class="btn-new-group" (click)="openCreateGroupModal()" title="Create group chat">
+              <i class="fas fa-users"></i> Group
+            </button>
+          </div>
+        </div>
+        
+        <div *ngIf="loading" class="loading-conversations">
+          <p>Loading conversations...</p>
+        </div>
+        
+        <div *ngIf="!loading && conversations.length === 0 && groupChats.length === 0 && pendingInvitations.length === 0" class="no-conversations">
+          <p>No conversations yet. Start messaging or create a group!</p>
+        </div>
+        
+        <div class="conversations-list">
+          <div *ngFor="let user of conversations" 
+               class="conversation-item" 
+               [class.active]="selectedConversation?.id === user.id && !selectedGroup"
+               (click)="openConversation(user.id)">
+            <div class="conversation-avatar" [style.background-image]="user.profilePicture ? 'url(' + user.profilePicture + ')' : 'none'">
+              <i *ngIf="!user.profilePicture" class="fas fa-user-circle"></i>
+            </div>
+            <div class="conversation-info">
+              <h3>{{ getPartnerName(user) }}</h3>
+              <p *ngIf="user.email">{{ user.email }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section" *ngIf="groupChats.length > 0">
+          <h3 class="sidebar-section-title"><i class="fas fa-users"></i> Group chats</h3>
+          <div class="conversations-list">
+            <div *ngFor="let group of groupChats" 
+                 class="conversation-item group-item" 
+                 [class.active]="selectedGroup?.id === group.id"
+                 (click)="openGroup(group)">
+              <div class="conversation-avatar group-avatar">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="conversation-info">
+                <h3>{{ group.name }}</h3>
+                <p>{{ group.members?.length || 0 }} members</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section" *ngIf="pendingInvitations.length > 0">
+          <h3 class="sidebar-section-title"><i class="fas fa-user-plus"></i> Invitations</h3>
+          <div class="invitations-list">
+            <div *ngFor="let inv of pendingInvitations" class="invitation-item">
+              <div class="invitation-info">
+                <strong>{{ inv.groupChatName }}</strong>
+                <span>{{ inv.inviterUsername }} invited you</span>
+              </div>
+              <div class="invitation-actions">
+                <button type="button" class="btn-accept-invite" (click)="acceptGroupInvitation(inv)" [disabled]="invitationActionLoading[inv.id]">
+                  <i class="fas fa-spinner fa-spin" *ngIf="invitationActionLoading[inv.id]"></i>
+                  <i class="fas fa-check" *ngIf="!invitationActionLoading[inv.id]"></i> Accept
+                </button>
+                <button type="button" class="btn-decline-invite" (click)="declineGroupInvitation(inv)" [disabled]="invitationActionLoading[inv.id]">
+                  <i class="fas fa-times"></i> Decline
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages Area -->
+      <div class="messages-area">
+        <div *ngIf="!selectedConversation && !selectedGroup" class="no-conversation-selected">
+          <i class="fas fa-comments"></i>
+          <h2>Select a conversation</h2>
+          <p>Choose a conversation or group from the sidebar, or create a group chat</p>
+          <button class="btn-browse-users" (click)="router.navigate(['/browse-users'])">
+            <i class="fas fa-users"></i> Browse Users
+          </button>
+          <button class="btn-new-group-main" (click)="openCreateGroupModal()">
+            <i class="fas fa-users"></i> Create group chat
+          </button>
+        </div>
+
+        <!-- Group chat view -->
+        <div *ngIf="selectedGroup" class="conversation-view group-view">
+          <div class="conversation-header">
+            <div class="conversation-partner">
+              <div class="partner-avatar group-avatar-header">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="partner-info">
+                <h3>{{ selectedGroup.name }}</h3>
+                <p class="group-members-preview">{{ getGroupMembersPreview(selectedGroup) }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="messages-container" #messagesContainer>
+            <div *ngIf="loadingGroupMessages" class="loading-messages">
+              <p>Loading messages...</p>
+            </div>
+            <div *ngIf="!loadingGroupMessages && groupMessages.length === 0" class="no-messages">
+              <p>No messages yet. Start the conversation!</p>
+            </div>
+            <div *ngIf="!loadingGroupMessages && groupMessages.length > 0" class="messages-list">
+              <div *ngFor="let msg of groupMessages" 
+                   class="message-item" 
+                   [class.my-message]="isMyGroupMessage(msg)"
+                   [class.their-message]="!isMyGroupMessage(msg)">
+                <div class="message-content">
+                  <div class="message-header">
+                    <strong>{{ msg.senderUsername }}</strong>
+                    <span class="message-time">{{ msg.sentAt | date:'short' }}</span>
+                  </div>
+                  <p class="message-text">{{ msg.content }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="message-input-area">
+            <textarea 
+              [(ngModel)]="newGroupMessageContent"
+              placeholder="Type your message..."
+              rows="2"
+              (keydown.enter)="$event.preventDefault(); sendGroupMessage()"
+              class="message-input"></textarea>
+            <button class="btn-send" (click)="sendGroupMessage()" [disabled]="sendingGroupMessage || !newGroupMessageContent.trim()">
+              <i class="fas fa-paper-plane" *ngIf="!sendingGroupMessage"></i>
+              <i class="fas fa-spinner fa-spin" *ngIf="sendingGroupMessage"></i>
+              Send
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="selectedConversation" class="conversation-view">
+          <!-- Conversation Header -->
+          <div class="conversation-header">
+            <div class="conversation-partner">
+              <div class="partner-avatar" [style.background-image]="selectedConversation.profilePicture ? 'url(' + selectedConversation.profilePicture + ')' : 'none'">
+                <i *ngIf="!selectedConversation.profilePicture" class="fas fa-user-circle"></i>
+              </div>
+              <div class="partner-info">
+                <h3>{{ getPartnerName(selectedConversation) }}</h3>
+                <p *ngIf="selectedConversation.email">{{ selectedConversation.email }}</p>
+              </div>
+            </div>
+            <div class="conversation-actions">
+              <button class="btn-video-call" (click)="startVideoCall()" title="Start video call">
+                <i class="fas fa-video"></i> Video call
+              </button>
+              <button class="btn-view-profile" (click)="router.navigate(['/user', selectedConversation.id])">
+                <i class="fas fa-user"></i> View Profile
+              </button>
+            </div>
+          </div>
+
+          <!-- Messages Container -->
+          <div class="messages-container" #messagesContainer>
+            <div *ngIf="loadingMessages" class="loading-messages">
+              <p>Loading messages...</p>
+            </div>
+            
+            <div *ngIf="!loadingMessages && messages.length === 0" class="no-messages">
+              <p>No messages yet. Start the conversation!</p>
+            </div>
+            
+            <div *ngIf="!loadingMessages && messages.length > 0" class="messages-list">
+              <div *ngFor="let message of messages; trackBy: trackByMessageId" 
+                   class="message-item" 
+                   [class.my-message]="isMyMessage(message)"
+                   [class.their-message]="!isMyMessage(message)">
+                <div class="message-content">
+                  <div class="message-header">
+                    <strong>{{ message.senderUsername }}</strong>
+                    <span class="message-time">{{ message.sentAt | date:'short' }}</span>
+                  </div>
+                  <p class="message-text">{{ message.content }}</p>
+                  <!-- Accept / Refuse proposal from inbox -->
+                  <div class="proposal-actions" *ngIf="isProposalMessage(message)">
+                    <p class="proposal-actions-label" *ngIf="canRespondToProposal(message)">Respond to this proposal:</p>
+                    <div class="proposal-buttons" *ngIf="canRespondToProposal(message)">
+                      <button type="button" class="btn-accept-proposal" (click)="acceptProposalFromMessage(message)" [disabled]="proposalActionLoading[message.id!]">
+                        <i class="fas fa-spinner fa-spin" *ngIf="proposalActionLoading[message.id!]"></i>
+                        <i class="fas fa-check" *ngIf="!proposalActionLoading[message.id!]"></i> Accept
+                      </button>
+                      <button type="button" class="btn-refuse-proposal" (click)="refuseProposalFromMessage(message)" [disabled]="proposalActionLoading[message.id!]">
+                        <i class="fas fa-times"></i> Refuse
+                      </button>
+                    </div>
+                    <p class="proposal-status" *ngIf="proposalDecision[message.id!] === 'accepted'"><i class="fas fa-check-circle"></i> You accepted this proposal.</p>
+                    <p class="proposal-status rejected" *ngIf="proposalDecision[message.id!] === 'rejected'"><i class="fas fa-times-circle"></i> You declined this proposal.</p>
+                  </div>
+                  <!-- Open project room (after accept or on any project-linked message) -->
+                  <div class="project-room-link" *ngIf="message.projectId">
+                    <a [routerLink]="['/projects', message.projectId, 'dashboard']" class="btn-project-dashboard">
+                      <i class="fas fa-comments"></i> Open project room
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Message Input -->
+          <div class="message-input-area">
+            <textarea 
+              [(ngModel)]="newMessage.content"
+              placeholder="Type your message..."
+              rows="2"
+              (keydown.enter)="$event.preventDefault(); sendMessage()"
+              class="message-input"></textarea>
+            <button class="btn-send" (click)="sendMessage()" [disabled]="sendingMessage || !newMessage.content.trim()">
+              <i class="fas fa-paper-plane" *ngIf="!sendingMessage"></i>
+              <i class="fas fa-spinner fa-spin" *ngIf="sendingMessage"></i>
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create group chat modal -->
+  <div class="modal-overlay" *ngIf="showCreateGroupModal" (click)="closeCreateGroupModal()">
+    <div class="modal-content create-group-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="fas fa-users"></i> Create group chat</h3>
+        <button type="button" class="btn-close-modal" (click)="closeCreateGroupModal()" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="modal-label">Group name (optional)</label>
+        <input type="text" [(ngModel)]="createGroupName" class="modal-input" placeholder="e.g. Team Alpha" />
+        <label class="modal-label">Select people to invite</label>
+        <div *ngIf="loadingUsersForInvite" class="modal-loading">Loading users...</div>
+        <div class="invitee-list" *ngIf="!loadingUsersForInvite && usersForInvite.length === 0">
+          <p>No other users to invite.</p>
+        </div>
+        <div class="invitee-list" *ngIf="!loadingUsersForInvite && usersForInvite.length > 0">
+          <div *ngFor="let u of usersForInvite" class="invitee-row" (click)="toggleInvitee(u.id)">
+            <input type="checkbox" [checked]="isInviteeSelected(u.id)" (click)="$event.stopPropagation()" (change)="toggleInvitee(u.id)" />
+            <span class="invitee-name">{{ u.username }}</span>
+            <span class="invitee-email" *ngIf="u.email">{{ u.email }}</span>
+          </div>
+        </div>
+        <p class="modal-hint" *ngIf="createGroupSelectedIds.length > 0">{{ createGroupSelectedIds.length }} selected. They will receive an invitation and can accept or decline.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel-modal" (click)="closeCreateGroupModal()">Cancel</button>
+        <button type="button" class="btn-create-group" (click)="createGroup()" [disabled]="creatingGroup || createGroupSelectedIds.length === 0">
+          <i class="fas fa-spinner fa-spin" *ngIf="creatingGroup"></i>
+          <i class="fas fa-plus" *ngIf="!creatingGroup"></i>
+          Create & send invitations
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Incoming call modal -->
+  <div class="video-modal incoming-call-modal" *ngIf="incomingCall">
+    <div class="video-modal-content">
+      <p class="incoming-call-text"><i class="fas fa-video"></i> Incoming call from {{ incomingCallFromName || getIncomingCallUserName() }}</p>
+      <div class="incoming-call-actions">
+        <button class="btn-accept-call" (click)="acceptVideoCall()"><i class="fas fa-phone"></i> Accept</button>
+        <button class="btn-decline-call" (click)="declineVideoCall()"><i class="fas fa-phone-slash"></i> Decline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active video call overlay -->
+  <div class="video-modal video-call-overlay" *ngIf="showVideoCall">
+    <div class="video-call-container">
+      <div class="remote-video-wrapper">
+        <video #remoteVideo autoplay playsinline></video>
+        <span class="video-label">Remote</span>
+      </div>
+      <div class="local-video-wrapper">
+        <video #localVideo autoplay playsinline muted></video>
+        <span class="video-label">You</span>
+      </div>
+      <button class="btn-hangup" (click)="endVideoCall()" title="End call">
+        <i class="fas fa-phone-slash"></i> End call
+      </button>
+    </div>
+  </div>
+</div>

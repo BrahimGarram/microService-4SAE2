@@ -1,24 +1,19 @@
 package com.example.servicetest.service;
 
-import com.example.servicetest.Dto.ProjectDTO;
 import com.example.servicetest.entity.Domain;
 import com.example.servicetest.entity.QuestionTest;
-import com.example.servicetest.interfaces.ProjectClient;
 import com.example.servicetest.repository.QuestionTestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class QuestionTestService {
-    @Autowired
-    ProjectClient projectClient;
+
     @Autowired
     private QuestionTestRepository questionTestRepository;
 
@@ -50,6 +45,9 @@ public class QuestionTestService {
         existing.setChoices(updatedQuestion.getChoices());
         existing.setCorrectAnswer(updatedQuestion.getCorrectAnswer());
         existing.setIsActive(updatedQuestion.getIsActive());
+        if (updatedQuestion.getLanguage() != null) existing.setLanguage(updatedQuestion.getLanguage());
+        if (updatedQuestion.getStarterCode() != null) existing.setStarterCode(updatedQuestion.getStarterCode());
+        if (updatedQuestion.getTestCasesJson() != null) existing.setTestCasesJson(updatedQuestion.getTestCasesJson());
 
         return questionTestRepository.save(existing);
     }
@@ -66,44 +64,46 @@ public class QuestionTestService {
         int numDomains = domains.size();
         if (numDomains == 0) return result;
 
-        // Nombre de questions par domaine (répartitions équitables)
         int questionsPerDomain = maxQuestions / numDomains;
-        int remainder = maxQuestions % numDomains; // Pour répartir les restes
+        int remainder = maxQuestions % numDomains;
+
+        List<QuestionTest> allActive = questionTestRepository.findAll().stream()
+                .filter(q -> q.getIsActive() != null && q.getIsActive())
+                .collect(Collectors.toList());
 
         for (Domain domain : domains) {
-            // Récupérer toutes les questions pour ce domaine
-            List<QuestionTest> questionsForDomain = questionTestRepository.findAll()
-                    .stream()
+            List<QuestionTest> questionsForDomain = allActive.stream()
                     .filter(q -> q.getDomain() == domain)
                     .collect(Collectors.toList());
-
-            // Mélanger aléatoirement
             Collections.shuffle(questionsForDomain);
-
-            // Calcul du nombre à prendre pour ce domaine
             int take = questionsPerDomain;
-            if (remainder > 0) { // ajouter 1 question aux premiers domaines si reste
+            if (remainder > 0) {
                 take += 1;
                 remainder--;
             }
-
-            // Ajouter au résultat (ou moins si pas assez de questions disponibles)
-            result.addAll(questionsForDomain.stream()
-                    .limit(take)
-                    .collect(Collectors.toList()));
+            result.addAll(questionsForDomain.stream().limit(take).collect(Collectors.toList()));
         }
 
-        // Mélanger le résultat final pour que l'ordre soit aléatoire
-        Collections.shuffle(result);
+        // Inclure au moins une question CODING si aucune dans le tirage (comparaison par id pour éviter doublon)
+        List<QuestionTest> codingPool = questionTestRepository.findActiveCodingQuestions().stream()
+                .filter(q -> q.getTestCasesJson() != null && !q.getTestCasesJson().trim().isEmpty())
+                .collect(Collectors.toList());
+        boolean hasCoding = result.stream().anyMatch(q -> q.getQuestionType() == com.example.servicetest.entity.QuestionType.CODING);
+        if (!hasCoding && !codingPool.isEmpty() && result.size() >= 1) {
+            Collections.shuffle(codingPool);
+            QuestionTest oneCoding = codingPool.get(0);
+            boolean alreadyInResult = result.stream().anyMatch(q -> q.getId() != null && q.getId().equals(oneCoding.getId()));
+            if (!alreadyInResult) {
+                result.remove(result.size() - 1);
+                result.add(oneCoding);
+            }
+        }
 
+        Collections.shuffle(result);
         return result;
     }
 
 
-    public ResponseEntity<List<ProjectDTO>> getallProjects() {
-        return projectClient.getAllProjects();
-
-    }
 
 
 
