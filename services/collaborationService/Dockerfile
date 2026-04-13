@@ -23,8 +23,15 @@ ENV APP_ENV=prod
 ENV APP_DEBUG=0
 ENV MESSENGER_TRANSPORT_DSN=sync://
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction \
+# Create minimal .env file for build (runtime env vars will override)
+RUN echo "APP_ENV=prod" > .env \
+    && echo "APP_SECRET=build_secret_will_be_overridden" >> .env \
+    && echo "DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy" >> .env
+
+# Install dependencies without running auto-scripts (cache:clear needs DB)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts \
     && mkdir -p var/collaboration_uploads var/cache var/log \
+    && chmod -R 777 var \
     && chown -R www-data:www-data var public
 
 RUN printf 'upload_max_filesize=64M\npost_max_size=64M\n' > /usr/local/etc/php/conf.d/uploads.ini

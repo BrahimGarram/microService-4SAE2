@@ -5,6 +5,7 @@ namespace: microservices
 
 resources:
   - ../base/namespace.yaml
+  - ../base/config-server-deployment.yaml
   - ../base/eureka-deployment.yaml
   - ../base/mysql-deployment.yaml
   - ../base/rabbitmq-deployment.yaml

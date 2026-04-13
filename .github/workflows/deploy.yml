@@ -19,6 +19,8 @@ jobs:
     strategy:
       matrix:
         service:
+          - name: config-server
+            context: ./ConfigServer
           - name: eureka
             context: ./Eureka
           - name: user-service

@@ -5,12 +5,27 @@
 
 services:
 
+  config-server:
+    build: ./ConfigServer
+    image: brahim2002/config-server:latest
+    pull_policy: build
+    ports:
+      - "8889:8889"
+    environment:
+      SPRING_PROFILES_ACTIVE: native
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+
   eureka-server:
     build: ./Eureka
     image: brahim2002/eureka:latest
     pull_policy: build
+    depends_on:
+      config-server:
+        condition: service_started
     ports:
       - "18761:8761"
+    environment:
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
