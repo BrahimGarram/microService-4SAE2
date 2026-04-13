@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("")  // Empty because context-path already includes /api/subscriptions
+@RequestMapping("/api/subscriptions")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = {"http://localhost:4200", "http://localhost:8080"}, 
@@ -82,6 +82,21 @@ public class SubscriptionController {
             return ResponseEntity.ok(history);
         } catch (Exception e) {
             log.error("Error fetching subscription history", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Get all subscriptions (shows all users with subscriptions)
+     */
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllSubscriptions() {
+        try {
+            List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
+            return ResponseEntity.ok(subscriptions);
+        } catch (Exception e) {
+            log.error("Error fetching all subscriptions", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }

@@ -30,7 +30,8 @@ public class ApiGateway4sae2Application {
             @Value("${gateway.service-test.uri:lb://SERVICE-TEST}") String serviceTestUri,
             @Value("${gateway.collaboration.uri:http://localhost:8888}") String collaborationUri,
             @Value("${gateway.project-service.uri:lb://PROJECT-SERVICE}") String projectServiceUri,
-            @Value("${gateway.complaints.uri:lb://FREELANCE-PLATFORM-SPRING-APP}") String complaintsUri) {
+            @Value("${gateway.complaints.uri:lb://FREELANCE-PLATFORM-SPRING-APP}") String complaintsUri,
+            @Value("${gateway.subscription.uri:lb://SUBSCRIPTION-SERVICE}") String subscriptionUri) {
 
         return builder.routes()
                 /* OpenAPI / Swagger UI du user-service (sans réécriture /user -> /api/users) */
@@ -63,6 +64,9 @@ public class ApiGateway4sae2Application {
                 .route("complaints-service", r -> r.path("/complaints/**")
                         .filters(f -> f.rewritePath("/complaints/(?<path>.*)", "/freelancity/${path}"))
                         .uri(complaintsUri))
+                /* Subscription service: /api/subscriptions/... */
+                .route("subscription-service", r -> r.path("/api/subscriptions/**")
+                        .uri(subscriptionUri))
                 /* Symfony collaboration (pubs): /collaboration/api/... -> service */
                 .route("collaboration-service", r -> r.path("/collaboration/**")
                         .filters(f -> f.rewritePath("/collaboration/(?<path>.*)", "/${path}"))

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/webhook")
+@RequestMapping("/api/subscriptions/webhook")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")

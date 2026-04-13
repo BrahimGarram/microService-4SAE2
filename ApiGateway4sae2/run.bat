@@ -1,0 +1,3 @@
+@echo off
+echo Starting ApiGateAway...
+mvnw.cmd spring-boot:run

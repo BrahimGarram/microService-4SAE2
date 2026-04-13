@@ -1,0 +1,7 @@
+com\example\apigateway4sae2\ApiGateway4sae2Application.class
+com\example\apigateway4sae2\GatewayCorsOriginsSync.class
+com\example\apigateway4sae2\CorsAllowedOrigins.class
+com\example\apigateway4sae2\CorsPreflightGatewayFilter.class
+com\example\apigateway4sae2\CorsFixGlobalFilter.class
+com\example\apigateway4sae2\OpenApiGatewayConfig.class
+com\example\apigateway4sae2\CorsFixGlobalFilter$1.class

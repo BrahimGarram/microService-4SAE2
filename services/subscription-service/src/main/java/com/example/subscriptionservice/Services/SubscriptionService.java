@@ -226,6 +226,11 @@ public class SubscriptionService implements ISubscriptionService {
         return subscriptionRepository.findByUserId(userId);
     }
 
+    @Override
+    public List<Subscription> getAllSubscriptions() {
+        return subscriptionRepository.findAll();
+    }
+
     // Helper methods
     private LocalDateTime calculateEndDate(LocalDateTime startDate, BillingCycle cycle) {
         return switch (cycle) {

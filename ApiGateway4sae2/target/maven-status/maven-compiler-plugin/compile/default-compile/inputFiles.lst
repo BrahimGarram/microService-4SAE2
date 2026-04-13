@@ -1,0 +1,6 @@
+C:\Users\cwclu\Desktop\FinalVersion\microService-4SAE2\ApiGateway4sae2\src\main\java\com\example\apigateway4sae2\ApiGateway4sae2Application.java
+C:\Users\cwclu\Desktop\FinalVersion\microService-4SAE2\ApiGateway4sae2\src\main\java\com\example\apigateway4sae2\CorsFixGlobalFilter.java
+C:\Users\cwclu\Desktop\FinalVersion\microService-4SAE2\ApiGateway4sae2\src\main\java\com\example\apigateway4sae2\GatewayCorsOriginsSync.java
+C:\Users\cwclu\Desktop\FinalVersion\microService-4SAE2\ApiGateway4sae2\src\main\java\com\example\apigateway4sae2\CorsAllowedOrigins.java
+C:\Users\cwclu\Desktop\FinalVersion\microService-4SAE2\ApiGateway4sae2\src\main\java\com\example\apigateway4sae2\CorsPreflightGatewayFilter.java
+C:\Users\cwclu\Desktop\FinalVersion\microService-4SAE2\ApiGateway4sae2\src\main\java\com\example\apigateway4sae2\OpenApiGatewayConfig.java

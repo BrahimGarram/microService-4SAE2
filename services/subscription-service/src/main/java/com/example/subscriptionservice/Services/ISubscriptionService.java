@@ -29,4 +29,7 @@ public interface ISubscriptionService {
     // User subscription info
     Subscription getActiveSubscription(Long userId);
     List<Subscription> getUserSubscriptionHistory(Long userId);
+    
+    // Get all subscriptions
+    List<Subscription> getAllSubscriptions();
 }

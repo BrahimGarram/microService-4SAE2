@@ -136,6 +136,20 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
 
+  subscription-service:
+    build: ./services/subscription-service
+    image: brahim2002/subscription-service:latest
+    pull_policy: build
+    depends_on:
+      eureka-server:
+        condition: service_started
+    ports:
+      - "18091:8091"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+      EUREKA_CLIENT_FETCH_REGISTRY: "true"
+
   collaboration-service:
     build: ./services/collaborationService
     pull_policy: build
@@ -171,6 +185,8 @@ services:
         condition: service_started
       complaints-service:
         condition: service_started
+      subscription-service:
+        condition: service_started
       collaboration-service:
         condition: service_started
     ports:
@@ -187,6 +203,7 @@ services:
       GATEWAY_COLLABORATION_URI: http://collaboration-service:80
       GATEWAY_PROJECT_SERVICE_URI: http://project-service:8082
       GATEWAY_COMPLAINTS_URI: http://complaints-service:8092
+      GATEWAY_SUBSCRIPTION_URI: http://subscription-service:8091
 
   frontend:
     build: ./frontend

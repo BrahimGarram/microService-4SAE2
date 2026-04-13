@@ -1,0 +1,3 @@
+@echo off
+echo Starting Eureka...
+mvnw.cmd spring-boot:run
