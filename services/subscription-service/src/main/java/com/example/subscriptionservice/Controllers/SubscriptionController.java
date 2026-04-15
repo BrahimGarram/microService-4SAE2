@@ -190,4 +190,69 @@ public class SubscriptionController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
+
+    /**
+     * Get all unique users who have subscriptions
+     */
+    @GetMapping("/users")
+    public ResponseEntity<?> getAllUsers() {
+        try {
+            List<Subscription> subscriptions = subscriptionService.getAllSubscriptions();
+            
+            // Extract unique user IDs with their latest subscription info
+            Map<Long, Map<String, Object>> usersMap = new HashMap<>();
+            
+            for (Subscription sub : subscriptions) {
+                Long userId = sub.getUserId();
+                if (!usersMap.containsKey(userId) || 
+                    sub.getCreatedAt().isAfter(
+                        ((Subscription)usersMap.get(userId).get("subscription")).getCreatedAt())) {
+                    
+                    Map<String, Object> userInfo = new HashMap<>();
+                    userInfo.put("userId", userId);
+                    userInfo.put("subscription", sub);
+                    userInfo.put("currentPlan", sub.getPlan().getPlanName());
+                    userInfo.put("status", sub.getStatus());
+                    userInfo.put("hasActiveSubscription", sub.isActive());
+                    
+                    usersMap.put(userId, userInfo);
+                }
+            }
+            
+            return ResponseEntity.ok(usersMap.values());
+        } catch (Exception e) {
+            log.error("Error fetching users", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Get user summary (all subscriptions for a user)
+     */
+    @GetMapping("/user/{userId}/summary")
+    public ResponseEntity<?> getUserSummary(@PathVariable Long userId) {
+        try {
+            List<Subscription> history = subscriptionService.getUserSubscriptionHistory(userId);
+            Subscription active = subscriptionService.getActiveSubscription(userId);
+            
+            Map<String, Object> summary = new HashMap<>();
+            summary.put("userId", userId);
+            summary.put("activeSubscription", active);
+            summary.put("totalSubscriptions", history.size());
+            summary.put("subscriptionHistory", history);
+            
+            if (active != null) {
+                summary.put("currentPlan", active.getPlan().getPlanName());
+                summary.put("bidsRemaining", active.getPlan().getMaxBidsPerMonth() - active.getBidsUsedThisMonth());
+                summary.put("bidsUsed", active.getBidsUsedThisMonth());
+            }
+            
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            log.error("Error fetching user summary", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
 }
